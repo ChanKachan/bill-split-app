@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"bill-split/internal/config"
@@ -9,12 +9,12 @@ import (
 type HandlersInterface interface{}
 
 type Handlers struct {
-	Authorization Authorization
+	authorization Authorization
 }
 
-func NewHandlers(dbpool *config.Interfaces) *Handlers {
+func NewHandlers(dbpool config.Postgres) *Handlers {
 	return &Handlers{
-		Authorization: NewAuthorizationHandler(dbpool),
+		authorization: NewAuthorizationHandler(dbpool),
 	}
 }
 

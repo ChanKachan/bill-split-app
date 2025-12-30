@@ -1,16 +1,12 @@
 package main
 
 import (
-	"bill-split/internal/config"
-	"bill-split/internal/handlers"
+	"bill-split/internal/app"
+	"log"
 )
 
 func main() {
-	dbpool := config.NewInterfaces()
-
-	defer dbpool.DbClose()
-
-	handlers := handlers.NewHandlers(dbpool)
-	handlers.InitRoutes()
-
+	if err := app.Start(); err != nil {
+		log.Println(err)
+	}
 }

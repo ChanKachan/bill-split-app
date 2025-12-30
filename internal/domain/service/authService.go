@@ -1,10 +1,10 @@
 package service
 
-type AuthServiceInterface interface {
+type AuthService interface {
 }
 
-type AuthService struct{}
+type authService struct{}
 
-func NewAuthService() AuthServiceInterface {
-	return &AuthService{}
+func NewAuthService() AuthService {
+	return &authService{}
 }

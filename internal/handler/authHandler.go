@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"bill-split/internal/config"
@@ -9,11 +9,11 @@ type Authorization interface {
 }
 
 type AuthorizationHandler struct {
-	Dbpg        *config.Interfaces
-	authService service.AuthServiceInterface
+	Dbpg        config.Postgres
+	authService service.AuthService
 }
 
-func NewAuthorizationHandler(dbpg *config.Interfaces) Authorization {
+func NewAuthorizationHandler(dbpg config.Postgres) Authorization {
 	return &AuthorizationHandler{
 		Dbpg:        dbpg,
 		authService: service.NewAuthService(),
