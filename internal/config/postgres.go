@@ -13,17 +13,21 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type Interfaces struct {
+type Postgres interface {
+	DbClose() error
+}
+
+type postgres struct {
 	Dbpg *sqlx.DB
 }
 
-func NewInterfaces() *Interfaces {
-	return &Interfaces{
+func NewInterfaces() Postgres {
+	return &postgres{
 		Dbpg: initDb(),
 	}
 }
 
-func (i *Interfaces) DbClose() error {
+func (i *postgres) DbClose() error {
 	return i.Dbpg.Close()
 }
 
