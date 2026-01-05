@@ -14,6 +14,7 @@ import (
 )
 
 type Postgres interface {
+	GetSqlxDb() *sqlx.DB
 	DbClose() error
 }
 
@@ -21,9 +22,9 @@ type postgres struct {
 	Dbpg *sqlx.DB
 }
 
-func NewInterfaces() Postgres {
+func NewInterfaces(db *sqlx.DB) Postgres {
 	return &postgres{
-		Dbpg: initDb(),
+		Dbpg: db,
 	}
 }
 
@@ -31,7 +32,11 @@ func (i *postgres) DbClose() error {
 	return i.Dbpg.Close()
 }
 
-func initDb() *sqlx.DB {
+func (i *postgres) GetSqlxDb() *sqlx.DB {
+	return i.Dbpg
+}
+
+func InitDb() *sqlx.DB {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
