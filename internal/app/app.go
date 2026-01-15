@@ -5,17 +5,19 @@ import (
 	"bill-split/internal/domain/service"
 	"bill-split/internal/repository"
 	proto "bill-split/proto/this"
-	"google.golang.org/grpc"
 	"log"
 	"net"
+
+	"google.golang.org/grpc"
 )
 
 func Start() error {
-	dbpool := config.NewInterfaces(config.InitDb())
+	conn, connStr := config.InitDb()
+	dbpool := config.New(conn, connStr)
 
 	defer dbpool.DbClose()
 
-	userRepo := repository.NewUserRepository(dbpool.GetSqlxDb())
+	userRepo := repository.NewUserRepository(dbpool.GetSql())
 	userService := service.NewUserService(userRepo)
 
 	//handlers := handler.NewHandlers(dbpool)
