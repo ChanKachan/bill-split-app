@@ -2,7 +2,9 @@ package app
 
 import (
 	"bill-split/internal/config"
-	"bill-split/internal/domain/service"
+	grpc2 "bill-split/internal/domain/service/grpc"
+	"bill-split/internal/domain/service/http"
+	"bill-split/internal/handler"
 	"bill-split/internal/repository"
 	proto "bill-split/proto/this"
 	"log"
@@ -17,11 +19,15 @@ func Start() error {
 
 	defer dbpool.DbClose()
 
+	// gRPC
 	userRepo := repository.NewUserRepository(dbpool.GetSql())
-	userService := service.NewUserService(userRepo)
+	userService := grpc2.NewUserService(userRepo)
 
-	//handlers := handler.NewHandlers(dbpool)
-	//handlers.InitRoutes()
+	// http
+	userHttpService := http.NewUserHttpService(userRepo)
+
+	handlers := handler.NewHandlers(userHttpService)
+	handlers.InitRoutes()
 
 	grpcServer := grpc.NewServer()
 
