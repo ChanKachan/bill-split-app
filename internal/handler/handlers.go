@@ -6,8 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type HandlersInterface interface{}
-
 type Handlers struct {
 	authorization Authorization
 	user          http.UserHttpService
