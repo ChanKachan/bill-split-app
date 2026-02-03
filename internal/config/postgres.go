@@ -18,6 +18,10 @@ type Postgres interface {
 	NewPoolConfig(maxConn int, connIdleTime, connLifeTime time.Duration) error
 	GetSql() *pgxpool.Pool
 	DbClose()
+	Ping(ctx context.Context) error
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error)
+	QueryRow(ctxParent context.Context, sql string, arguments ...any) pgx.Row
 }
 
 type postgres struct {
@@ -103,6 +107,7 @@ func InitDb() (*pgxpool.Pool, string) {
 
 	if err != nil {
 		log.Printf("Не удалось подключиться к базе данных: %v\n", err)
+		return nil, ""
 	}
 
 	log.Println("Подключение к базе данных прошла успешно.")
