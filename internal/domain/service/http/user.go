@@ -11,6 +11,8 @@ import (
 
 type UserHttpService interface {
 	Create(c *gin.Context)
+	GetUserById(c *gin.Context)
+	UpdateUser(c *gin.Context)
 }
 type userHttpService struct {
 	userRepo repository.UserRepository
