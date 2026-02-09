@@ -19,14 +19,22 @@ func Start() error {
 
 	defer dbpool.DbClose()
 
-	// gRPC
+	// repository
 	userRepo := repository.NewUserRepository(dbpool.GetSql())
+	groupRepo := repository.NewGroupRepository(dbpool.GetSql())
+
+	// gRPC
 	userService := grpc2.NewUserService(userRepo)
 
 	// http
 	userHttpService := http.NewUserHttpService(userRepo)
+	groupHttpService := http.NewGroupService(groupRepo)
 
-	handlers := handler.NewHandlers(userHttpService)
+	handlers := handler.NewHandlers(
+		userHttpService,
+		groupHttpService,
+	)
+
 	handlers.InitRoutes()
 
 	grpcServer := grpc.NewServer()
