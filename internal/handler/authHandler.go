@@ -8,14 +8,14 @@ import (
 type Authorization interface {
 }
 
-type AuthorizationHandler struct {
+type authorizationHandler struct {
 	Dbpg        config.Postgres
 	authService service.AuthService
 }
 
-func NewAuthorizationHandler(dbpg config.Postgres) Authorization {
-	return &AuthorizationHandler{
+func NewAuthorizationHandler(dbpg config.Postgres, authService service.AuthService) Authorization {
+	return &authorizationHandler{
 		Dbpg:        dbpg,
-		authService: service.NewAuthService(),
+		authService: authService,
 	}
 }
