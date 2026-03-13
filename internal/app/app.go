@@ -3,6 +3,7 @@ package app
 import (
 	"bill-split/internal/config"
 	"bill-split/internal/domain/service"
+	"bill-split/internal/handler"
 	"bill-split/internal/repository"
 	proto "bill-split/proto/this"
 	"google.golang.org/grpc"
@@ -11,15 +12,22 @@ import (
 )
 
 func Start() error {
-	dbpool := config.NewInterfaces(config.InitDb())
+	dbpool := config.NewPostgres(config.InitDb())
 
 	defer dbpool.DbClose()
 
 	userRepo := repository.NewUserRepository(dbpool.GetSqlxDb())
 	userService := service.NewUserService(userRepo)
 
-	//handlers := handler.NewHandlers(dbpool)
-	//handlers.InitRoutes()
+	authService := service.NewAuthService(userRepo)
+
+	handlers := handler.NewHandlers(authService)
+	r := handlers.InitRoutes()
+
+	r.POST("/register", handlers.RegisterUser)
+	r.POST("/auth", handlers.Auth)
+
+	r.Run("0.0.0.0:8080")
 
 	grpcServer := grpc.NewServer()
 

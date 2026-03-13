@@ -1,27 +1,21 @@
 package handler
 
 import (
-	"bill-split/internal/config"
-
+	"bill-split/internal/domain/service"
 	"github.com/gin-gonic/gin"
 )
 
-type HandlersInterface interface{}
-
 type Handlers struct {
-	authorization Authorization
+	authorization service.AuthService
 }
 
-func NewHandlers(dbpool config.Postgres) *Handlers {
+func NewHandlers(authService service.AuthService) *Handlers {
 	return &Handlers{
-		authorization: NewAuthorizationHandler(dbpool),
+		authorization: authService,
 	}
 }
 
 func (h *Handlers) InitRoutes() *gin.Engine {
 	r := gin.Default()
-
-	r.Run("0.0.0.0:8080")
-
 	return r
 }

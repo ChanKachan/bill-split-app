@@ -22,7 +22,7 @@ type postgres struct {
 	Dbpg *sqlx.DB
 }
 
-func NewInterfaces(db *sqlx.DB) Postgres {
+func NewPostgres(db *sqlx.DB) Postgres {
 	return &postgres{
 		Dbpg: db,
 	}
