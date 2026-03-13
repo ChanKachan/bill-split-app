@@ -1,4 +1,4 @@
-package service
+package grpc
 
 import (
 	"bill-split/internal/domain/entity/user"
@@ -6,6 +6,7 @@ import (
 	"bill-split/internal/utils"
 	proto "bill-split/proto/this"
 	"context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
