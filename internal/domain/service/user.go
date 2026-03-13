@@ -45,7 +45,7 @@ func (u *userService) CreateUser(ctx context.Context, req *proto.CreateUserReque
 	}
 
 	return &proto.CreateUserResponse{
-		Id:   userId,
+		Id:   int64(userId),
 		Code: 200,
 	}, nil
 }
@@ -61,7 +61,7 @@ func (u *userService) UpdateUser(ctx context.Context, req *proto.UpdateUserReque
 	}
 
 	var user = user.User{
-		Id:       req.Data.Id,
+		Id:       int(req.Data.Id),
 		Name:     req.Data.Name,
 		Email:    req.Data.Email,
 		Phone:    req.Data.Phone,
