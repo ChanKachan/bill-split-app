@@ -3,6 +3,7 @@ package app
 import (
 	"bill-split/internal/config"
 	"bill-split/internal/domain/service"
+	grpcService "bill-split/internal/domain/service/grpc"
 	"bill-split/internal/handler"
 	"bill-split/internal/repository"
 	proto "bill-split/proto/this"
@@ -17,7 +18,8 @@ func Start() error {
 	defer dbpool.DbClose()
 
 	userRepo := repository.NewUserRepository(dbpool.GetSqlxDb())
-	userService := service.NewUserService(userRepo)
+	//userService := service.NewUserHttpService(userRepo)
+	userGrpcService := grpcService.NewUserService(userRepo)
 
 	authService := service.NewAuthService(userRepo)
 
@@ -31,7 +33,7 @@ func Start() error {
 
 	grpcServer := grpc.NewServer()
 
-	proto.RegisterUserServiceServer(grpcServer, userService)
+	proto.RegisterUserServiceServer(grpcServer, userGrpcService)
 
 	// Запускаем на порту 30000
 	lis, err := net.Listen("tcp", ":30000")
