@@ -6,6 +6,7 @@ import (
 	grpcService "bill-split/internal/domain/service/grpc"
 	"bill-split/internal/handler"
 	"bill-split/internal/repository"
+	"bill-split/middleware"
 	proto "bill-split/proto/this"
 	"google.golang.org/grpc"
 	"log"
@@ -17,17 +18,27 @@ func Start() error {
 
 	defer dbpool.DbClose()
 
-	userRepo := repository.NewUserRepository(dbpool.GetSqlxDb())
+	// User
+	userRepo := repository.NewUserRepository(dbpool.GetPGXPool())
 	//userService := service.NewUserHttpService(userRepo)
 	userGrpcService := grpcService.NewUserService(userRepo)
 
+	// Group
+	groupRepo := repository.NewGroupRepository(dbpool.GetPGXPool())
+	groupService := service.NewGroupService(groupRepo)
+
 	authService := service.NewAuthService(userRepo)
 
-	handlers := handler.NewHandlers(authService)
+	handlers := handler.NewHandlers(authService, groupService)
 	r := handlers.InitRoutes()
 
 	r.POST("/register", handlers.RegisterUser)
 	r.POST("/auth", handlers.Auth)
+
+	r.Group("/api", middleware.AuthMiddleware())
+	{
+		r.POST("/create/group", handlers.CreateGroup)
+	}
 
 	r.Run("0.0.0.0:8080")
 

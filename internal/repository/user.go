@@ -2,9 +2,11 @@ package repository
 
 import (
 	"bill-split/internal/domain/entity/user"
+	"context"
 	"database/sql"
 	"errors"
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"time"
 )
 
 type UserRepository interface {
@@ -16,19 +18,22 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	db *sqlx.DB
+	db *pgxpool.Pool
 }
 
-func NewUserRepository(db *sqlx.DB) UserRepository {
+func NewUserRepository(db *pgxpool.Pool) UserRepository {
 	return &userRepository{
 		db: db,
 	}
 }
 
 func (u *userRepository) GetUserByLogin(login string) (*user.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	var user user.User
 
-	err := u.db.QueryRow(`
+	err := u.db.QueryRow(ctx, `
 		SELECT id, name, email, phone, login, password
 		FROM "user"
 		WHERE login = $1
@@ -46,7 +51,10 @@ func (u *userRepository) GetUserByLogin(login string) (*user.User, error) {
 }
 
 func (u *userRepository) CreateUser(userData user.User) (int, error) {
-	err := u.db.QueryRow(
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	err := u.db.QueryRow(ctx,
 		`INSERT INTO "user" (name, email, phone, login, password) 
 						VALUES ($1, $2, $3, $4, $5) RETURNING id;`,
 		userData.Name, userData.Email, userData.Phone, userData.Login, userData.Password,
@@ -59,7 +67,10 @@ func (u *userRepository) CreateUser(userData user.User) (int, error) {
 }
 
 func (u *userRepository) UpdateUser(userData user.User) error {
-	_, err := u.db.Exec(`
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	_, err := u.db.Exec(ctx, `
 		UPDATE "user"
 		SET name = $1, email = $2, phone = $3, password = $4 
 		WHERE id = $5
@@ -74,9 +85,12 @@ func (u *userRepository) UpdateUser(userData user.User) error {
 }
 
 func (u *userRepository) GetUserById(id int) (*user.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	var user user.User
 
-	err := u.db.QueryRow(`
+	err := u.db.QueryRow(ctx, `
 		SELECT name, email, phone, login
 		FROM "user"
 		WHERE id = $1
@@ -91,9 +105,12 @@ func (u *userRepository) GetUserById(id int) (*user.User, error) {
 }
 
 func (u *userRepository) GetUserIdByLogin(login string) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	var id int
 
-	err := u.db.QueryRow(`
+	err := u.db.QueryRow(ctx, `
 		SELECT id
 		FROM "user"
 		WHERE login = $1

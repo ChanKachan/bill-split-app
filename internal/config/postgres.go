@@ -8,35 +8,33 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 )
 
 type Postgres interface {
-	GetSqlxDb() *sqlx.DB
-	DbClose() error
+	GetPGXPool() *pgxpool.Pool
+	DbClose()
 }
 
 type postgres struct {
-	Dbpg *sqlx.DB
+	Dbpg *pgxpool.Pool
 }
 
-func NewPostgres(db *sqlx.DB) Postgres {
+func NewPostgres(db *pgxpool.Pool) Postgres {
 	return &postgres{
 		Dbpg: db,
 	}
 }
 
-func (i *postgres) DbClose() error {
-	return i.Dbpg.Close()
+func (i *postgres) DbClose() {
+	i.Dbpg.Close()
 }
 
-func (i *postgres) GetSqlxDb() *sqlx.DB {
+func (i *postgres) GetPGXPool() *pgxpool.Pool {
 	return i.Dbpg
 }
 
-func InitDb() *sqlx.DB {
+func InitDb() *pgxpool.Pool {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -63,10 +61,10 @@ func InitDb() *sqlx.DB {
 	}
 
 	//Конвертируем в тип *sqlx.DB
-	sqlDB := stdlib.OpenDBFromPool(dbpool)
-	db := sqlx.NewDb(sqlDB, "postgres")
+	//sqlDB := stdlib.OpenDBFromPool(dbpool)
+	//db := sqlx.NewDb(sqlDB, "postgres")
 
 	log.Println("Подключение к базе данных прошла успешно.")
 
-	return db
+	return dbpool
 }
