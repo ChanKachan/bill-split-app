@@ -12,35 +12,43 @@ import (
 // AuthMiddleware создает middleware для проверки JWT токена
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Получаем токен из заголовка Authorization
+		var tokenString string
+
+		// 1. Пытаемся получить токен из Authorization header
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+		if authHeader != "" {
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
+				tokenString = parts[1]
+			}
+		}
+
+		// 2. Если нет в header, ищем в form-data
+		if tokenString == "" {
+			// Из form-data или x-www-form-urlencoded
+			tokenString = c.PostForm("Authorization") // Ищем поле Authorization в form-data
+
+			// Если нашли и оно начинается с "Bearer "
+			if tokenString != "" && strings.HasPrefix(tokenString, "Bearer ") {
+				tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+			}
+		}
+
+		// 3. Проверяем наличие токена
+		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "unauthorized",
-				"message": "missing authorization header",
+				"error":   "unauthorized",
+				"message": "token not found in headers or form-data",
 			})
 			c.Abort()
 			return
 		}
-
-		// Проверяем формат токена (Bearer token)
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "unauthorized",
-				"message": "invalid authorization header format",
-			})
-			c.Abort()
-			return
-		}
-
-		tokenString := parts[1]
 
 		// Получаем секретный ключ из переменных окружения
 		jwtKey := os.Getenv("jwtSecretKey")
 		if jwtKey == "" {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "internal server error",
+				"error":   "internal server error",
 				"message": "JWT secret key not configured",
 			})
 			c.Abort()
@@ -59,7 +67,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		if err != nil || !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "unauthorized",
+				"error":   "unauthorized",
 				"message": "invalid or expired token",
 			})
 			c.Abort()
@@ -70,7 +78,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		userID, ok := claims["sub"].(string)
 		if !ok {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "unauthorized",
+				"error":   "unauthorized",
 				"message": "invalid token claims",
 			})
 			c.Abort()

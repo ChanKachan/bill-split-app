@@ -35,9 +35,10 @@ func Start() error {
 	r.POST("/register", handlers.RegisterUser)
 	r.POST("/auth", handlers.Auth)
 
-	r.Group("/api", middleware.AuthMiddleware())
+	// TODO: убрал  middleware.AuthMiddleware() на время тестов
+	api := r.Group("/api", middleware.AuthMiddleware())
 	{
-		r.POST("/create/group", handlers.CreateGroup)
+		api.POST("/create/group", handlers.CreateGroup)
 	}
 
 	r.Run("0.0.0.0:8080")
