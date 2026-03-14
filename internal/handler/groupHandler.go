@@ -26,7 +26,7 @@ func (h *Handlers) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	userInfoAny, ok := c.Get("sub")
+	userInfoAny, ok := c.Get("userID")
 	if !ok {
 		log.Println("Create Group | user_info not found in context")
 		c.JSON(http.StatusBadRequest, gin.H{

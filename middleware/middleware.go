@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -75,8 +76,18 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Извлекаем userID из claims (sub)
-		userID, ok := claims["sub"].(string)
+		userIDstr, ok := claims["sub"].(string)
 		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error":   "unauthorized",
+				"message": "invalid token claims",
+			})
+			c.Abort()
+			return
+		}
+
+		userID, err := strconv.Atoi(userIDstr)
+		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error":   "unauthorized",
 				"message": "invalid token claims",
