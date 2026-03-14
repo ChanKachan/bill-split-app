@@ -1,4 +1,4 @@
-package grpc
+package grpcService
 
 import (
 	"bill-split/internal/domain/entity/user"
