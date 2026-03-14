@@ -26,7 +26,7 @@ func (h *Handlers) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	userInfoAny, ok := c.Get("user_info")
+	userInfoAny, ok := c.Get("sub")
 	if !ok {
 		log.Println("Create Group | user_info not found in context")
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -35,7 +35,7 @@ func (h *Handlers) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	userInfo, ok := userInfoAny.(*internal.UserInfo)
+	userId, ok := userInfoAny.(int)
 	if !ok {
 		log.Println("Create Group | Failed to get user info")
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -44,10 +44,12 @@ func (h *Handlers) CreateGroup(c *gin.Context) {
 		return
 	}
 
+	userInfo := internal.UserInfo{UserId: userId}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := h.groupService.CreateGroup(ctx, groupInfo, userInfo)
+	err := h.groupService.CreateGroup(ctx, groupInfo, &userInfo)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
