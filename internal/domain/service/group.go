@@ -14,7 +14,7 @@ import (
 )
 
 type GroupService interface {
-	CreateGroup(c *gin.Context)
+	CreateGroup(ctx context.Context, groupInfo groupStruct.Group, userInfo *internal.UserInfo) error
 	AddUserToGroup(c *gin.Context)
 }
 type group struct {
@@ -27,52 +27,12 @@ func NewGroupService(groupRepo repository.GroupRepository) GroupService {
 	}
 }
 
-func (gr *group) CreateGroup(c *gin.Context) {
-	groupInfo := groupStruct.Group{}
-
-	if err := c.ShouldBind(&groupInfo); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	if groupInfo.Name == "" && groupInfo.DateStart.IsZero() && groupInfo.DateEnd.IsZero() {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Group name and date cannot be both empty",
-		})
-		return
-	}
-
-	userInfoAny, ok := c.Get("user_info")
-	if !ok {
-		log.Println("Create Group | user_info not found in context")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "user_info not found in context",
-		})
-		return
-	}
-
-	userInfo, ok := userInfoAny.(*internal.UserInfo)
-	if !ok {
-		log.Println("Create Group | Failed to get user info")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to get user info",
-		})
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-
-	defer cancel()
+func (gr *group) CreateGroup(ctx context.Context, groupInfo groupStruct.Group, userInfo *internal.UserInfo) error {
 
 	err := gr.groupRepo.TransactionBegin(ctx)
 	if err != nil {
 		log.Println("Create Group | Failed begin transaction")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
+		return err
 	}
 
 	defer func() {
@@ -87,10 +47,7 @@ func (gr *group) CreateGroup(c *gin.Context) {
 		err = gr.groupRepo.Commit(ctx)
 		if err != nil {
 			log.Println("Create Group | Failed commit group")
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
+			log.Println(err.Error())
 		}
 	}()
 
@@ -98,10 +55,7 @@ func (gr *group) CreateGroup(c *gin.Context) {
 	groupInfo.Id, err = gr.groupRepo.CreateGroup(groupInfo)
 	if err != nil {
 		log.Println("Create Group | Failed create group")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
+		return err
 	}
 
 	groupData := groupMembers.GroupMembers{
@@ -114,12 +68,9 @@ func (gr *group) CreateGroup(c *gin.Context) {
 	err = gr.groupRepo.AddUserToGroup(groupData)
 	if err != nil {
 		log.Println("Create Group | Failed add user to group")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
+		return err
 	}
-	return
+	return nil
 }
 
 func (gr *group) AddUserToGroup(c *gin.Context) {

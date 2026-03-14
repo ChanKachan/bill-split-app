@@ -7,11 +7,16 @@ import (
 
 type Handlers struct {
 	authorization service.AuthService
+	groupService  service.GroupService
 }
 
-func NewHandlers(authService service.AuthService) *Handlers {
+func NewHandlers(
+	authService service.AuthService, // Авторизация
+	groupService service.GroupService, // Группа/Событие
+) *Handlers {
 	return &Handlers{
 		authorization: authService,
+		groupService:  groupService,
 	}
 }
 
