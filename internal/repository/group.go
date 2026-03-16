@@ -72,7 +72,7 @@ func (gr *groupRepository) TransactionRollback(ctx context.Context) error {
 // Методы запросов
 func (gr *groupRepository) CreateGroup(groupData group.Group) (int, error) {
 	var err error
-	query := `INSERT INTO groups (name, create_at, date_start, date_end) VALUES ($1, $2, $3, $4) RETURNING id`
+	query := `INSERT INTO "group" (name, create_at, date_start, date_end) VALUES ($1, $2, $3, $4) RETURNING id`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -106,7 +106,7 @@ func (gr *groupRepository) CreateGroup(groupData group.Group) (int, error) {
 
 func (gr *groupRepository) AddUserToGroup(groupData groupMembers.GroupMembers) error {
 	var err error
-	query := `INSERT INTO group_users (user_id, group_id, money_spent, status) VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO "group_members" (user_id, group_id, money_spent, status) VALUES ($1, $2, $3, $4)`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -139,7 +139,7 @@ func (gr *groupRepository) AddUserToGroup(groupData groupMembers.GroupMembers) e
 func (gr *groupRepository) DelUserFromGroup(userId, groupId int) error {
 	var err error
 	query := `
-		UPDATE group_users 
+		UPDATE "group_members" 
 		SET del = 1 
 		WHERE user_id = $1 
 		  AND group_id = $2`
@@ -177,9 +177,9 @@ func (gr *groupRepository) GetUsers(groupId int) ([]user.User, error) {
 	defer rows.Close()
 
 	query := `
-		SELECT gu user_id 
-		FROM group_users gu 
-		LEFT JOIN groups g ON g.id = gu.group_id
+		SELECT gu.user_id 
+		FROM "group_members" gu 
+		LEFT JOIN "groups" g ON g.id = gu.group_id
 		WHERE group_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
