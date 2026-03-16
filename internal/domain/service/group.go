@@ -27,6 +27,14 @@ func NewGroupService(groupRepo repository.GroupRepository) GroupService {
 	}
 }
 
+// Создать событие
+// Обязательные параметры
+/*
+	"name":"test", - название события
+    "date_start": "2022-01-01T00:00:00Z", - дата начало события
+    "date_end": "2022-01-01T00:00:00Z", - дата окончание события
+    "amount": 12000 - потраченная сумма во время события
+*/
 func (gr *group) CreateGroup(ctx context.Context, groupInfo groupStruct.Group, userInfo *internal.UserInfo) error {
 
 	err := gr.groupRepo.TransactionBegin(ctx)
@@ -73,6 +81,7 @@ func (gr *group) CreateGroup(ctx context.Context, groupInfo groupStruct.Group, u
 	return nil
 }
 
+// Добавить пользователя в группу
 func (gr *group) AddUserToGroup(c *gin.Context) {
 	var groupMembers groupMembers.GroupMembers
 
