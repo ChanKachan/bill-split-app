@@ -6,6 +6,7 @@ CREATE TABLE public.group_members (
                                       group_id int4 NOT NULL,
                                       money_spent float4 NOT NULL,
                                       status varchar NOT NULL,
+                                      del int4 DEFAULT 0 NOT NULL,
                                       CONSTRAINT group_members_id_pk PRIMARY KEY (id),
                                       CONSTRAINT group_members_user_fk FOREIGN KEY (user_id) REFERENCES public."user"(id),
                                       CONSTRAINT group_members_group_fk_1 FOREIGN KEY (group_id) REFERENCES public."group"(id)
