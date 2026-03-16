@@ -24,6 +24,7 @@ func NewAuthService(userRepo repository.UserRepository) AuthService {
 	}
 }
 
+// Регистрация пользователя
 func (as *authService) RegisterUser(userData user.User) (string, error) {
 	var err error
 	userId, err := as.userRepo.GetUserIdByLogin(userData.Login)
@@ -55,6 +56,12 @@ func (as *authService) RegisterUser(userData user.User) (string, error) {
 	return token, nil
 }
 
+// Аутентификация пользователя
+// Сервис проверяет входные параметры
+// Выдает jwt токен, где есть параметры: userID, актуальность токена (2 недели)
+// Обязательные данные для работы
+// login string
+// password string
 func (as *authService) Auth(userData user.User) (string, error) {
 	userOfDb, err := as.userRepo.GetUserByLogin(userData.Login)
 	if err != nil {
@@ -71,7 +78,7 @@ func (as *authService) Auth(userData user.User) (string, error) {
 
 	jwtKey := os.Getenv("jwtSecretKey")
 
-	token, err := utils.GenerateCentrifugeToken(strconv.Itoa(userData.Id), jwtKey)
+	token, err := utils.GenerateCentrifugeToken(strconv.Itoa(userOfDb.Id), jwtKey)
 	if err != nil {
 		return "", err
 	}
