@@ -3,7 +3,6 @@ package service
 import (
 	"bill-split/internal/domain/entity/user"
 	"bill-split/internal/repository"
-	"bill-split/internal/utils"
 	"context"
 )
 
@@ -21,14 +20,7 @@ func NewUserHttpService(userRepo repository.UserRepository) UserHttpService {
 }
 
 func (u *userHttpService) UpdateUser(ctx context.Context, userData user.User) error {
-	passwordHash, err := utils.HashPassword(userData.Password)
-	if err != nil {
-		return err
-	}
-
-	userData.Password = passwordHash
-
-	err = u.userRepo.UpdateUser(ctx, userData)
+	err := u.userRepo.UpdateUser(ctx, userData)
 	if err != nil {
 		return err
 	}

@@ -74,7 +74,7 @@ func (u *userRepository) UpdateUser(ctx context.Context, userData user.User) err
 	var query strings.Builder
 	count := 1
 	var args []any
-	if userData.Id != 0 {
+	if userData.Id == 0 {
 		return errors.New("cannot update user: haven't userId")
 	}
 
@@ -109,7 +109,7 @@ func (u *userRepository) UpdateUser(ctx context.Context, userData user.User) err
 		return nil
 	}
 
-	query.WriteString(fmt.Sprintf("WHERE id = $%d", count))
+	query.WriteString(fmt.Sprintf(" WHERE id = $%d", count))
 	args = append(args, userData.Id)
 	count++
 
