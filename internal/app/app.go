@@ -20,25 +20,56 @@ func Start() error {
 
 	// User
 	userRepo := repository.NewUserRepository(dbpool.GetPGXPool())
-	//userService := service.NewUserHttpService(userRepo)
+	userService := service.NewUserHttpService(userRepo)
 	userGrpcService := grpcService.NewUserService(userRepo)
 
 	// Group
 	groupRepo := repository.NewGroupRepository(dbpool.GetPGXPool())
 	groupService := service.NewGroupService(groupRepo)
 
+	// auth
 	authService := service.NewAuthService(userRepo)
 
-	handlers := handler.NewHandlers(authService, groupService)
+	// optimization
+	optimizationService := service.NewOptimizationService()
+
+	//handlers
+	userHandler := handler.NewUserHandler(userService)                         // Пользователь
+	groupHandler := handler.NewGroupHandler(groupService)                      // Группа
+	optimizationHandler := handler.NewOptimizationHandler(optimizationService) // Оптимизация handler
+
+	handlers := handler.NewHandlers(
+		authService,
+		groupHandler,
+		optimizationHandler,
+		userHandler,
+	)
 	r := handlers.InitRoutes()
 
 	r.POST("/register", handlers.RegisterUser)
 	r.POST("/auth", handlers.Auth)
 
-	// TODO: убрал  middleware.AuthMiddleware() на время тестов
 	api := r.Group("/api", middleware.AuthMiddleware())
 	{
-		api.POST("/create/group", handlers.CreateGroup)
+		// Пользователь
+		apiUser := api.Group("/user")
+		{
+			// GET
+			apiUser.GET("/get/groups", handlers.GroupHandler.GetUserGroups)
+
+			// PATCH
+			apiUser.PATCH("/update", handlers.UserHandler.UpdateUserData)
+		}
+
+		// Группа
+		apiGroup := api.Group("/group")
+		{
+			// GET
+			apiGroup.GET("/get/members", handlers.GroupHandler.GetUsersInGroup)
+
+			// POST
+			apiGroup.POST("/create", handlers.GroupHandler.CreateGroup)
+		}
 	}
 
 	r.Run("0.0.0.0:8080")

@@ -5,7 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"reflect"
+	"strings"
 	"time"
 )
 
@@ -13,7 +16,7 @@ type UserRepository interface {
 	GetUserById(id int) (*user.User, error)
 	CreateUser(userData user.User) (int, error)
 	GetUserIdByLogin(login string) (int, error)
-	UpdateUser(userData user.User) error
+	UpdateUser(ctx context.Context, userData user.User) error
 	GetUserByLogin(login string) (*user.User, error)
 }
 
@@ -66,17 +69,56 @@ func (u *userRepository) CreateUser(userData user.User) (int, error) {
 	return userData.Id, nil
 }
 
-func (u *userRepository) UpdateUser(userData user.User) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
+// Метод обновляет данные пользователя
+func (u *userRepository) UpdateUser(ctx context.Context, userData user.User) error {
+	var query strings.Builder
+	count := 1
+	var args []any
+	if userData.Id != 0 {
+		return errors.New("cannot update user: haven't userId")
+	}
 
-	_, err := u.db.Exec(ctx, `
-		UPDATE "user"
-		SET name = $1, email = $2, phone = $3, password = $4 
-		WHERE id = $5
-		`,
-		userData.Name, userData.Email, userData.Phone, userData.Password, &userData.Id,
+	query.WriteString(`
+			UPDATE "user"
+		`)
+	query.WriteString(`
+			SET
+		`)
+
+	valueUserElements := reflect.ValueOf(userData)
+	typeOfUserElements := reflect.TypeOf(userData)
+
+	// Цикл пробегает по полям в структуре
+	for i := 0; i < valueUserElements.NumField(); i++ {
+		if typeOfUserElements.Field(i).Type.Kind() == reflect.String {
+			if valueUserElements.Field(i).String() != "" {
+				structTag := typeOfUserElements.Field(i).Tag.Get("db")
+				if structTag != "" && structTag != "-" {
+					if count != 1 {
+						query.WriteString(",")
+					}
+					query.WriteString(fmt.Sprintf("%s = $%d", structTag, count))
+					args = append(args, valueUserElements.Field(i).String())
+					count++
+				}
+			}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query.WriteString(fmt.Sprintf("WHERE id = $%d", count))
+	args = append(args, userData.Id)
+	count++
+
+	_, err := u.db.Exec(
+		ctx,
+		query.String(),
+		args...,
 	)
+
 	if err != nil {
 		return err
 	}

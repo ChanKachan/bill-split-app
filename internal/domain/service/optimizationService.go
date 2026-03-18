@@ -2,53 +2,23 @@ package service
 
 import (
 	"bill-split/internal/domain/entity/transfer"
-	"github.com/gin-gonic/gin"
-	"log"
 	"math"
 )
 
-type OptimizationService interface{ Optimize(c *gin.Context) }
-
-type optimizationService struct {
+type OptimizationService interface {
+	OptimizeDebts(participants []transfer.Participant) []transfer.Transaction
 }
 
-type transaction struct {
-	fromId int // от кого
-	toId   int // к кому
-	amount int // сумма перевода
-}
+type optimizationService struct{}
 
-// participant представляет участника группы
-type participant struct {
-	ID      int
-	Name    string
-	Balance float64 // >0 — должен получить, <0 — должен заплатить
-}
-
-// Метод реализует жадный алгорим.
-// Самый большой должник погашает долг самого большого кредитора
-func (os *optimizationService) Optimize(c *gin.Context) {
-	var participants []transfer.Participant
-
-	if err := c.ShouldBind(&participants); err != nil {
-		log.Println("OptimizationService.Optimize err:", err)
-		c.JSON(400, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	transaction := optimizeDebts(participants)
-	c.JSON(200, gin.H{
-		"code": 200,
-		"data": transaction,
-	})
-	return
+func NewOptimizationService() OptimizationService {
+	return &optimizationService{}
 }
 
 // OptimizeDebts - жадный алгоритм для минимизации количества транзакций.
 // Принимает список участников с их балансами.
 // Возвращает список рекомендуемых переводов.
-func optimizeDebts(participants []transfer.Participant) []transfer.Transaction {
+func (o *optimizationService) OptimizeDebts(participants []transfer.Participant) []transfer.Transaction {
 	// Разделяем на должников (balance < 0) и получателей (balance > 0)
 	debtors := make([]*transfer.Participant, 0)
 	receivers := make([]*transfer.Participant, 0)
@@ -59,7 +29,7 @@ func optimizeDebts(participants []transfer.Participant) []transfer.Transaction {
 		if math.Abs(p.Balance) < 0.01 { // Небольшой допуск для ошибок округления
 			continue
 		}
-		if p.Balance < 0 {
+		if p.IsOwes {
 			// Для удобства делаем баланс должника положительным числом (сумма долга)
 			p.Balance = math.Abs(p.Balance)
 			debtors = append(debtors, p)
@@ -81,9 +51,9 @@ func optimizeDebts(participants []transfer.Participant) []transfer.Transaction {
 		// Создаем транзакцию
 		if transferAmount > 0.01 {
 			transactions = append(transactions, transfer.Transaction{
-				From:   debtor.Name,
-				To:     receiver.Name,
-				Amount: transferAmount,
+				FromUserId: debtor.UserId,
+				ToUserId:   receiver.UserId,
+				Amount:     transferAmount,
 			})
 		}
 

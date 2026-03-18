@@ -13,11 +13,18 @@ import (
 )
 
 type GroupRepository interface {
+	// Транзакция
 	TransactionBegin(ctx context.Context) error
 	Commit(ctx context.Context) error
 	TransactionRollback(ctx context.Context) error
+
+	// Изменить данные (добавить, удалить, обновить)
 	CreateGroup(groupData group.Group) (int, error)
 	AddUserToGroup(groupData groupMembers.GroupMembers) error
+
+	// Получить данные
+	GetGroupsByUserId(ctx context.Context, userId int) ([]group.Group, error)
+	GetMembersByGroupId(ctx context.Context, groupId int) ([]groupMembers.GroupMembers, error)
 }
 
 type groupRepository struct {
@@ -174,12 +181,10 @@ func (gr *groupRepository) GetUsers(groupId int) ([]user.User, error) {
 	var members []user.User
 	var rows pgx.Rows
 
-	defer rows.Close()
-
 	query := `
 		SELECT gu.user_id 
 		FROM "group_members" gu 
-		LEFT JOIN "groups" g ON g.id = gu.group_id
+		LEFT JOIN "group" g ON g.id = gu.group_id
 		WHERE group_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -190,6 +195,7 @@ func (gr *groupRepository) GetUsers(groupId int) ([]user.User, error) {
 	} else {
 		rows, err = gr.db.Query(ctx, query, groupId)
 	}
+	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -204,4 +210,83 @@ func (gr *groupRepository) GetUsers(groupId int) ([]user.User, error) {
 	}
 
 	return members, nil
+}
+
+// Получить группы в котором состоит пользователь
+func (gr *groupRepository) GetGroupsByUserId(ctx context.Context, userId int) ([]group.Group, error) {
+	var err error
+	var groupData group.Group
+	var groupsData []group.Group
+	var rows pgx.Rows
+
+	query := `
+		SELECT gu.group_id, g.name, g.create_at, g.date_start, g.date_end
+		FROM group_members gu 
+		LEFT JOIN group g ON g.id = gu.group_id
+		WHERE gu.user_id = $1`
+
+	if gr.dbTx != nil {
+		rows, err = gr.dbTx.Query(ctx, query, userId)
+	} else {
+		rows, err = gr.db.Query(ctx, query, userId)
+	}
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		err = rows.Scan(
+			&groupData.Id,
+			&groupData.Name,
+			&groupData.CreateAt,
+			&groupData.DateStart,
+			&groupData.DateEnd,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		groupsData = append(groupsData, groupData)
+	}
+
+	return groupsData, nil
+}
+
+// Получить пользователей в группе
+func (gr *groupRepository) GetMembersByGroupId(ctx context.Context, groupId int) ([]groupMembers.GroupMembers, error) {
+	var err error
+	var groupMemberData groupMembers.GroupMembers
+	var groupMembersData []groupMembers.GroupMembers
+	var rows pgx.Rows
+
+	query := `
+		SELECT gu.user_id, gu.money_spent
+		FROM group_members gu 
+		WHERE gu.group_id = $1 AND gu.del = 0
+		`
+
+	if gr.dbTx != nil {
+		rows, err = gr.dbTx.Query(ctx, query, groupId)
+	} else {
+		rows, err = gr.db.Query(ctx, query, groupId)
+	}
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		err = rows.Scan(
+			&groupMemberData.UserId,
+			&groupMemberData.Amount,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		groupMembersData = append(groupMembersData, groupMemberData)
+	}
+
+	return groupMembersData, nil
 }

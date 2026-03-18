@@ -6,16 +6,18 @@ import (
 	"bill-split/internal/domain/entity/groupMembers"
 	"bill-split/internal/repository"
 	"context"
+	"errors"
 	"log"
-	"net/http"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 type GroupService interface {
+	// POST
 	CreateGroup(ctx context.Context, groupInfo groupStruct.Group, userInfo *internal.UserInfo) error
-	AddUserToGroup(c *gin.Context)
+
+	// GET
+	GetGroupsById(ctx context.Context, userId int) ([]groupStruct.Group, error)
+	GetGroupMembersByGroupId(ctx context.Context, groupId int) ([]groupMembers.GroupMembers, error)
 }
 type group struct {
 	groupRepo repository.GroupRepository
@@ -81,23 +83,50 @@ func (gr *group) CreateGroup(ctx context.Context, groupInfo groupStruct.Group, u
 	return nil
 }
 
-// Добавить пользователя в группу
-func (gr *group) AddUserToGroup(c *gin.Context) {
-	var groupMembers groupMembers.GroupMembers
+//// Добавить пользователя в группу
+//func (gr *group) AddUserToGroup(c *gin.Context) {
+//	var groupMembers groupMembers.GroupMembers
+//
+//	if err := c.ShouldBind(&groupMembers); err != nil {
+//		log.Println("AddUserToGroup | Failed bind group members struct")
+//		c.JSON(http.StatusBadRequest, gin.H{
+//			"error": err.Error(),
+//		})
+//		return
+//	}
+//
+//	if err := gr.groupRepo.AddUserToGroup(groupMembers); err != nil {
+//		log.Println("AddUserToGroup | Failed add user to group")
+//		c.JSON(http.StatusBadRequest, gin.H{
+//			"error": err.Error(),
+//		})
+//	}
+//
+//	return
+//}
 
-	if err := c.ShouldBind(&groupMembers); err != nil {
-		log.Println("AddUserToGroup | Failed bind group members struct")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+func (gr *group) GetGroupsById(ctx context.Context, userId int) ([]groupStruct.Group, error) {
+	if userId == 0 {
+		return nil, errors.New("userId can not be 0")
 	}
 
-	if err := gr.groupRepo.AddUserToGroup(groupMembers); err != nil {
-		log.Println("AddUserToGroup | Failed add user to group")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+	groupsData, err := gr.groupRepo.GetGroupsByUserId(ctx, userId)
+	if err != nil {
+		return nil, err
 	}
 
-	return
+	return groupsData, nil
+}
+
+func (gr *group) GetGroupMembersByGroupId(ctx context.Context, groupId int) ([]groupMembers.GroupMembers, error) {
+	if groupId == 0 {
+		return nil, errors.New("group id can not be 0")
+	}
+
+	groupMembersData, err := gr.groupRepo.GetMembersByGroupId(ctx, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	return groupMembersData, nil
 }
