@@ -6,17 +6,23 @@ import (
 )
 
 type Handlers struct {
-	authorization service.AuthService
-	groupService  service.GroupService
+	authorization       service.AuthService
+	GroupHandler        GroupHandler
+	OptimizationHandler OptimizationHandler
+	UserHandler         UserHandler
 }
 
 func NewHandlers(
-	authService service.AuthService, // Авторизация
-	groupService service.GroupService, // Группа/Событие
+	authService service.AuthService, // Авторизация ToDO: Нужно убрать сервис отсюда и переписать его в отдельный handler, где будет и регистрация и авторизация
+	groupHandler GroupHandler, // Группа/Событие
+	optimizationHandler OptimizationHandler,
+	userHandler UserHandler,
 ) *Handlers {
 	return &Handlers{
-		authorization: authService,
-		groupService:  groupService,
+		authorization:       authService,
+		GroupHandler:        groupHandler,
+		OptimizationHandler: optimizationHandler,
+		UserHandler:         userHandler,
 	}
 }
 

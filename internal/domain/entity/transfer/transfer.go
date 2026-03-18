@@ -4,13 +4,14 @@ package transfer
 // Отрицательный баланс означает, что участник должен деньги (должник).
 // Положительный баланс означает, что участнику должны деньги (получатель).
 type Participant struct {
-	Name    string
+	UserId  int
 	Balance float64
+	IsOwes  bool
 }
 
 // Transaction представляет собой рекомендуемую операцию перевода.
 type Transaction struct {
-	From   string
-	To     string
-	Amount float64
+	FromUserId int
+	ToUserId   int
+	Amount     float64
 }

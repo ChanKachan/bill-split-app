@@ -69,7 +69,7 @@ func (u *userService) UpdateUser(ctx context.Context, req *proto.UpdateUserReque
 		Password: passwordHash,
 	}
 
-	err = u.userRepo.UpdateUser(user)
+	err = u.userRepo.UpdateUser(ctx, user)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "userService | GetUserById error: %v", err)
 	}
