@@ -21,10 +21,15 @@ type GroupRepository interface {
 	// Изменить данные (добавить, удалить, обновить)
 	CreateGroup(groupData group.Group) (int, error)
 	AddUserToGroup(groupData groupMembers.GroupMembers) error
+	RemoveUserFromGroup(ctx context.Context, groupId, userId int) error
 
 	// Получить данные
+	GetGroupIdByLink(link string) (int, error)
+	GetGroup(groupId int) (group.Group, error)
 	GetGroupsByUserId(ctx context.Context, userId int) ([]group.Group, error)
 	GetMembersByGroupId(ctx context.Context, groupId int) ([]groupMembers.GroupMembers, error)
+	CheckUserInGroup(ctx context.Context, groupId, userId int) (bool, error)
+	GetUserRoleInGroup(ctx context.Context, groupId, userId int) (string, error)
 }
 
 type groupRepository struct {
@@ -36,6 +41,113 @@ func NewGroupRepository(db *pgxpool.Pool) GroupRepository {
 	return &groupRepository{
 		db: db,
 	}
+}
+
+func (gr *groupRepository) GetGroupIdByLink(link string) (int, error) {
+	var id int
+	var err error
+	query := `SELECT id FROM "group" WHERE link_invite = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if gr.dbTx != nil {
+		err = gr.dbTx.QueryRow(
+			ctx,
+			query,
+			link,
+		).Scan(
+			&id,
+		)
+	} else {
+		err = gr.db.QueryRow(
+			ctx,
+			query,
+			link,
+		).Scan(
+			&id,
+		)
+	}
+
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func (gr *groupRepository) GetUserRoleInGroup(ctx context.Context, groupId, userId int) (string, error) {
+	var status string
+	query := `
+		SELECT status 
+		FROM group_members 
+		WHERE group_id = $1 
+		  AND user_id = $2 
+		  AND del = 0
+	`
+
+	if gr.dbTx != nil {
+		err := gr.dbTx.QueryRow(ctx, query, groupId, userId).Scan(&status)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		err := gr.db.QueryRow(ctx, query, groupId, userId).Scan(&status)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return status, nil
+}
+
+func (gr *groupRepository) RemoveUserFromGroup(ctx context.Context, groupId, userId int) error {
+	var err error
+	query := `
+		UPDATE group_members 
+		SET del = 1 
+		WHERE group_id = $1 
+		  AND user_id = $2
+	`
+
+	if gr.dbTx != nil {
+		_, err = gr.dbTx.Exec(ctx, query, groupId, userId)
+	} else {
+		_, err = gr.db.Exec(ctx, query, groupId, userId)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (gr *groupRepository) CheckUserInGroup(ctx context.Context, groupId, userId int) (bool, error) {
+	var exists bool
+	query := `
+		SELECT EXISTS(
+			SELECT 1 
+			FROM group_members 
+			WHERE group_id = $1 
+			  AND user_id = $2 
+			  AND del = 0
+		)
+	`
+
+	if gr.dbTx != nil {
+		err := gr.dbTx.QueryRow(ctx, query, groupId, userId).Scan(&exists)
+		if err != nil {
+			return false, err
+		}
+	} else {
+		err := gr.db.QueryRow(ctx, query, groupId, userId).Scan(&exists)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return exists, nil
 }
 
 // Методы для транзакции
@@ -77,6 +189,47 @@ func (gr *groupRepository) TransactionRollback(ctx context.Context) error {
 }
 
 // Методы запросов
+func (gr *groupRepository) GetGroup(groupId int) (group.Group, error) {
+	var groupData group.Group
+	var err error
+	query := `SELECT id, name, create_at, date_start, date_end FROM "group" WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if gr.dbTx != nil {
+		err = gr.dbTx.QueryRow(
+			ctx,
+			query,
+			&groupId,
+		).Scan(
+			&groupData.Id,
+			&groupData.Name,
+			&groupData.CreateAt,
+			&groupData.DateStart,
+			&groupData.DateEnd,
+		)
+	} else {
+		err = gr.db.QueryRow(
+			ctx,
+			query,
+			&groupId,
+		).Scan(
+			&groupData.Id,
+			&groupData.Name,
+			&groupData.CreateAt,
+			&groupData.DateStart,
+			&groupData.DateEnd,
+		)
+	}
+
+	if err != nil {
+		return group.Group{}, err
+	}
+
+	return groupData, nil
+}
+
 func (gr *groupRepository) CreateGroup(groupData group.Group) (int, error) {
 	var err error
 	query := `INSERT INTO "group" (name, create_at, date_start, date_end) VALUES ($1, $2, $3, $4) RETURNING id`
@@ -261,7 +414,7 @@ func (gr *groupRepository) GetMembersByGroupId(ctx context.Context, groupId int)
 	var rows pgx.Rows
 
 	query := `
-		SELECT gu.user_id, gu.money_spent
+		SELECT gu.user_id, gu.group_id, gu.status, gu.money_spent
 		FROM group_members gu 
 		WHERE gu.group_id = $1 AND gu.del = 0
 		`
@@ -279,6 +432,8 @@ func (gr *groupRepository) GetMembersByGroupId(ctx context.Context, groupId int)
 	for rows.Next() {
 		err = rows.Scan(
 			&groupMemberData.UserId,
+			&groupMemberData.GroupId,
+			&groupMemberData.Status,
 			&groupMemberData.Amount,
 		)
 		if err != nil {
