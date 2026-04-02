@@ -133,12 +133,12 @@ func (u *userRepository) GetUserById(id int) (*user.User, error) {
 	var user user.User
 
 	err := u.db.QueryRow(ctx, `
-		SELECT name, email, phone, login
+		SELECT id, name, email, phone, login
 		FROM "user"
 		WHERE id = $1
 	`, id,
 	).Scan(
-		&user.Name, &user.Email, &user.Phone, &user.Login,
+		&user.Id, &user.Name, &user.Email, &user.Phone, &user.Login,
 	)
 	if err != nil {
 		return nil, err

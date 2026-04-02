@@ -10,6 +10,7 @@ type Handlers struct {
 	GroupHandler        GroupHandler
 	OptimizationHandler OptimizationHandler
 	UserHandler         UserHandler
+	CostHandler         CostHandler
 }
 
 func NewHandlers(
@@ -17,12 +18,14 @@ func NewHandlers(
 	groupHandler GroupHandler, // Группа/Событие
 	optimizationHandler OptimizationHandler,
 	userHandler UserHandler,
+	CostHandler CostHandler,
 ) *Handlers {
 	return &Handlers{
 		authorization:       authService,
 		GroupHandler:        groupHandler,
 		OptimizationHandler: optimizationHandler,
 		UserHandler:         userHandler,
+		CostHandler:         CostHandler,
 	}
 }
 

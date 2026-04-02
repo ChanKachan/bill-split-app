@@ -8,6 +8,7 @@ import (
 
 type UserHttpService interface {
 	UpdateUser(ctx context.Context, userData user.User) error
+	GetUser(ctx context.Context, userID int) (*user.User, error)
 }
 type userHttpService struct {
 	userRepo repository.UserRepository
@@ -26,4 +27,12 @@ func (u *userHttpService) UpdateUser(ctx context.Context, userData user.User) er
 	}
 
 	return nil
+}
+
+func (u *userHttpService) GetUser(ctx context.Context, userID int) (*user.User, error) {
+	userData, err := u.userRepo.GetUserById(userID)
+	if err != nil {
+		return nil, err
+	}
+	return userData, nil
 }
