@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"os"
 )
 
 func Start() error {
@@ -112,7 +113,7 @@ func Start() error {
 	// Запускаем HTTP сервер в горутине
 	go func() {
 		log.Println("HTTP Server started on port 8080")
-		if err := r.Run("0.0.0.0:8080"); err != nil {
+		if err := r.Run("0.0.0.0:" + os.Getenv("HTTP_PORT")); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -121,7 +122,7 @@ func Start() error {
 	grpcServer := grpc.NewServer()
 	proto.RegisterUserServiceServer(grpcServer, userGrpcService)
 
-	lis, err := net.Listen("tcp", ":30000")
+	lis, err := net.Listen("tcp", ":"+os.Getenv("GRPC_PORT"))
 	if err != nil {
 		log.Fatal(err)
 	}
