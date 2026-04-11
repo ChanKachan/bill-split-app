@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  # Основной сервис
+  app:
+    build: .
+    container_name: main
+    restart: on-failure:5
+    ports:
+      - "${HTTP_PORT}:${HTTP_PORT}"
+    env_file:
+      - .env
+    environment:
+      TZ: Europe/Moscow
