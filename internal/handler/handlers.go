@@ -1,12 +1,11 @@
 package handler
 
 import (
-	"bill-split/internal/domain/service"
 	"github.com/gin-gonic/gin"
 )
 
 type Handlers struct {
-	authorization       service.AuthService
+	AuthHandler         AuthHandler
 	GroupHandler        GroupHandler
 	OptimizationHandler OptimizationHandler
 	UserHandler         UserHandler
@@ -14,14 +13,14 @@ type Handlers struct {
 }
 
 func NewHandlers(
-	authService service.AuthService, // Авторизация ToDO: Нужно убрать сервис отсюда и переписать его в отдельный handler, где будет и регистрация и авторизация
+	authHandler AuthHandler, // Авторизация
 	groupHandler GroupHandler, // Группа/Событие
 	optimizationHandler OptimizationHandler,
 	userHandler UserHandler,
 	CostHandler CostHandler,
 ) *Handlers {
 	return &Handlers{
-		authorization:       authService,
+		AuthHandler:         authHandler,
 		GroupHandler:        groupHandler,
 		OptimizationHandler: optimizationHandler,
 		UserHandler:         userHandler,

@@ -2,10 +2,27 @@ package handler
 
 import (
 	"bill-split/internal/domain/entity/user"
+	"bill-split/internal/domain/service"
+
 	"github.com/gin-gonic/gin"
 )
 
-func (h *Handlers) RegisterUser(c *gin.Context) {
+type AuthHandler interface {
+	RegisterUser(c *gin.Context)
+	Auth(c *gin.Context)
+}
+
+type authHandler struct {
+	service service.AuthService
+}
+
+func NewAuthHandler(service service.AuthService) AuthHandler {
+	return &authHandler{
+		service: service,
+	}
+}
+
+func (h *authHandler) RegisterUser(c *gin.Context) {
 	data := user.User{}
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(400, gin.H{
@@ -14,7 +31,7 @@ func (h *Handlers) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	token, err := h.authorization.RegisterUser(data)
+	token, err := h.service.RegisterUser(data)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error": err.Error(),
@@ -27,7 +44,7 @@ func (h *Handlers) RegisterUser(c *gin.Context) {
 	return
 }
 
-func (h *Handlers) Auth(c *gin.Context) {
+func (h *authHandler) Auth(c *gin.Context) {
 	data := user.User{}
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(400, gin.H{
@@ -36,7 +53,7 @@ func (h *Handlers) Auth(c *gin.Context) {
 		return
 	}
 
-	token, err := h.authorization.Auth(data)
+	token, err := h.service.Auth(data)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error": err.Error(),
