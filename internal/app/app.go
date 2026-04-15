@@ -8,11 +8,12 @@ import (
 	"bill-split/internal/repository"
 	"bill-split/middleware"
 	proto "bill-split/proto/this"
-	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc"
 	"log"
 	"net"
 	"os"
+
+	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
 )
 
 func Start() error {
@@ -31,6 +32,7 @@ func Start() error {
 
 	// auth
 	authService := service.NewAuthService(userRepo)
+	authHandler := handler.NewAuthHandler(authService)
 
 	// optimization
 	optimizationService := service.NewOptimizationService()
@@ -46,7 +48,7 @@ func Start() error {
 	costHandler := handler.NewCostHandler(costService)
 
 	handlers := handler.NewHandlers(
-		authService,
+		authHandler,
 		groupHandler,
 		optimizationHandler,
 		userHandler,
@@ -71,8 +73,8 @@ func Start() error {
 		c.Next()
 	})
 
-	r.POST("/register", handlers.RegisterUser)
-	r.POST("/auth", handlers.Auth)
+	r.POST("/register", handlers.AuthHandler.RegisterUser)
+	r.POST("/auth", handlers.AuthHandler.Auth)
 
 	api := r.Group("/api", middleware.AuthMiddleware())
 	{
