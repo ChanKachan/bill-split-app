@@ -375,7 +375,7 @@ func (gr *groupRepository) GetGroupsByUserId(ctx context.Context, userId int) ([
 	query := `
 		SELECT gu.group_id, g.name, g.create_at, g.date_start, g.date_end
 		FROM group_members gu 
-		LEFT JOIN group g ON g.id = gu.group_id
+		LEFT JOIN "group" g ON g.id = gu.group_id
 		WHERE gu.user_id = $1`
 
 	if gr.dbTx != nil {
