@@ -2,9 +2,22 @@ version: "3.8"
 
 services:
   # Основной сервис
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
   app:
     build: .
-    container_name: main
+    container_name: backend
     restart: on-failure:5
     ports:
       - "${HTTP_PORT}:${HTTP_PORT}"
@@ -12,3 +25,12 @@ services:
       - .env
     environment:
       TZ: Europe/Moscow
+
+
+volumes:
+  postgres_data:
+
+networks:
+  postgres_network:
+    driver: bridge
+    internal: false
