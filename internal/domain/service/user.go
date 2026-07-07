@@ -1,9 +1,9 @@
 package service
 
 import (
-	"bill-split/internal/domain/entity/user"
-	"bill-split/internal/repository"
 	"context"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository"
 )
 
 type UserHttpService interface {

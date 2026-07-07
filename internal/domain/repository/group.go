@@ -1,11 +1,11 @@
 package repository
 
 import (
-	"bill-split/internal/domain/entity/group"
-	"bill-split/internal/domain/entity/groupMembers"
-	"bill-split/internal/domain/entity/user"
 	"context"
 	"errors"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/group"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/groupMembers"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
 	"time"
 
 	"github.com/jackc/pgx/v5"

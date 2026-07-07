@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"bill-split/internal/domain/entity/transfer"
-	"bill-split/internal/domain/service"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/transfer"
+	"github.com/ChanKachan/bill-split-app/internal/domain/service"
 	"github.com/gin-gonic/gin"
 	"log"
 )

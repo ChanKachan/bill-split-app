@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"bill-split/internal/domain/entity/cost"
 	"context"
 	"errors"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/cost"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

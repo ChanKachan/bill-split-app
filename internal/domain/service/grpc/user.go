@@ -1,11 +1,11 @@
 package grpcService
 
 import (
-	"bill-split/internal/domain/entity/user"
-	"bill-split/internal/repository"
-	"bill-split/internal/utils"
-	proto "bill-split/proto/this"
 	"context"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository"
+	"github.com/ChanKachan/bill-split-app/internal/utils"
+	proto "github.com/ChanKachan/bill-split-app/proto/this"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

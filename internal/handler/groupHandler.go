@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"bill-split/internal"
-	"bill-split/internal/domain/entity/group"
-	"bill-split/internal/domain/entity/groupMembers"
-	"bill-split/internal/domain/service"
 	"context"
 	"errors"
+	"github.com/ChanKachan/bill-split-app/internal"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/group"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/groupMembers"
+	"github.com/ChanKachan/bill-split-app/internal/domain/service"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"

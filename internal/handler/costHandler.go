@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"bill-split/internal/domain/entity/cost"
-	"bill-split/internal/domain/service"
 	"context"
 	"errors"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/cost"
+	"github.com/ChanKachan/bill-split-app/internal/domain/service"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"

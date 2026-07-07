@@ -1,11 +1,11 @@
 package repository
 
 import (
-	"bill-split/internal/domain/entity/user"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"reflect"
 	"strings"

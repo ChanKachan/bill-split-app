@@ -1,12 +1,12 @@
 package service
 
 import (
-	"bill-split/internal"
-	groupStruct "bill-split/internal/domain/entity/group"
-	"bill-split/internal/domain/entity/groupMembers"
-	"bill-split/internal/repository"
 	"context"
 	"errors"
+	"github.com/ChanKachan/bill-split-app/internal"
+	groupStruct "github.com/ChanKachan/bill-split-app/internal/domain/entity/group"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/groupMembers"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository"
 	"log"
 	"time"
 )

@@ -1,22 +1,24 @@
 package app
 
 import (
-	"bill-split/internal/config"
-	"bill-split/internal/domain/service"
-	grpcService "bill-split/internal/domain/service/grpc"
-	"bill-split/internal/handler"
-	"bill-split/internal/repository"
-	"bill-split/middleware"
-	proto "bill-split/proto/this"
+	"github.com/ChanKachan/bill-split-app/internal/config"
+	repository "github.com/ChanKachan/bill-split-app/internal/domain/repository"
+	"github.com/ChanKachan/bill-split-app/internal/domain/service"
+	grpcService "github.com/ChanKachan/bill-split-app/internal/domain/service/grpc"
+	"github.com/ChanKachan/bill-split-app/internal/handler"
+	"github.com/ChanKachan/bill-split-app/middleware"
+	proto "github.com/ChanKachan/bill-split-app/proto/this"
 	"log"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 )
 
 func Start() error {
+	var wg sync.WaitGroup
 	dbpool := config.NewPostgres(config.InitDb())
 
 	defer dbpool.DbClose()
@@ -40,6 +42,8 @@ func Start() error {
 	// cost
 	costRepository := repository.NewCostRepository(dbpool.GetPGXPool())
 	costService := service.NewCostService(costRepository, groupService)
+
+	// chat
 
 	//handlers
 	userHandler := handler.NewUserHandler(userService)
@@ -113,8 +117,9 @@ func Start() error {
 	}
 
 	// Запускаем HTTP сервер в горутине
+	wg.Add(1)
 	go func() {
-		log.Println("HTTP Server started on port 8080")
+		log.Printf("HTTP Server started on port %s", os.Getenv("HTTP_PORT"))
 		if err := r.Run("0.0.0.0:" + os.Getenv("HTTP_PORT")); err != nil {
 			log.Fatal(err)
 		}
@@ -133,6 +138,8 @@ func Start() error {
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal(err)
 	}
+
+	wg.Wait()
 
 	return nil
 }

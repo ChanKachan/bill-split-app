@@ -1,10 +1,10 @@
 package service
 
 import (
-	"bill-split/internal/domain/entity/user"
-	"bill-split/internal/repository"
-	"bill-split/internal/utils"
 	"errors"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository"
+	"github.com/ChanKachan/bill-split-app/internal/utils"
 	"os"
 	"strconv"
 )

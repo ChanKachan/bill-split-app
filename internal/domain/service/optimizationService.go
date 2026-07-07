@@ -1,7 +1,7 @@
 package service
 
 import (
-	"bill-split/internal/domain/entity/transfer"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/transfer"
 	"math"
 )
 

@@ -1,10 +1,10 @@
 package service
 
 import (
-	"bill-split/internal/domain/entity/cost"
-	"bill-split/internal/repository"
 	"context"
 	"errors"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/cost"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository"
 )
 
 type CostService interface {

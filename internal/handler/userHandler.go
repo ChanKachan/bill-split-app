@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"bill-split/internal/domain/entity/user"
-	"bill-split/internal/domain/service"
 	"context"
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
+	"github.com/ChanKachan/bill-split-app/internal/domain/service"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"

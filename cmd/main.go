@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bill-split/internal/app"
+	"github.com/ChanKachan/bill-split-app/internal/app"
 	"log"
 )
 
