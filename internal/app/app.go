@@ -1,17 +1,20 @@
 package app
 
 import (
+	"log"
+	"net"
+	"os"
+	"sync"
+
 	"github.com/ChanKachan/bill-split-app/internal/config"
 	repository "github.com/ChanKachan/bill-split-app/internal/domain/repository"
 	"github.com/ChanKachan/bill-split-app/internal/domain/service"
 	grpcService "github.com/ChanKachan/bill-split-app/internal/domain/service/grpc"
 	"github.com/ChanKachan/bill-split-app/internal/handler"
+	"github.com/ChanKachan/bill-split-app/internal/handler/ws/chat"
 	"github.com/ChanKachan/bill-split-app/middleware"
 	proto "github.com/ChanKachan/bill-split-app/proto/this"
-	"log"
-	"net"
-	"os"
-	"sync"
+	"github.com/gorilla/websocket"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -19,7 +22,10 @@ import (
 
 func Start() error {
 	var wg sync.WaitGroup
+
+	// configs
 	dbpool := config.NewPostgres(config.InitDb())
+	configWS := config.GetConfigWebSocket()
 
 	defer dbpool.DbClose()
 
@@ -43,13 +49,18 @@ func Start() error {
 	costRepository := repository.NewCostRepository(dbpool.GetPGXPool())
 	costService := service.NewCostService(costRepository, groupService)
 
-	// chat
-
 	//handlers
 	userHandler := handler.NewUserHandler(userService)
 	groupHandler := handler.NewGroupHandler(groupService)
 	optimizationHandler := handler.NewOptimizationHandler(optimizationService)
 	costHandler := handler.NewCostHandler(costService)
+	chatHandler := chat.NewChatHandler(
+		websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+		},
+		configWS,
+	)
 
 	handlers := handler.NewHandlers(
 		authHandler,
@@ -79,9 +90,12 @@ func Start() error {
 
 	r.POST("/register", handlers.AuthHandler.RegisterUser)
 	r.POST("/auth", handlers.AuthHandler.Auth)
+	r.GET("/ws", chatHandler.ConnectionWS)
 
 	api := r.Group("/api", middleware.AuthMiddleware())
 	{
+		// chat
+		//api.POST("/ws", chatHandler.ConnectionWS)
 		// Оптимизация
 		api.POST("/optimize", optimizationHandler.Optimize)
 		// Пользователь

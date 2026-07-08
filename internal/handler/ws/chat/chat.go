@@ -1,39 +1,55 @@
 package chat
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ChanKachan/bill-split-app/internal/types"
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"sync"
+	"time"
+
+	"github.com/ChanKachan/bill-split-app/internal/config"
+	"github.com/ChanKachan/bill-split-app/internal/types"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 )
 
 type ChatHandler interface {
 	ConnectionWS(c *gin.Context)
-	Close() error
 }
 
 type chatHandler struct {
-	ws     websocket.Upgrader
-	conn   *websocket.Conn
-	client *client
-	mutex  sync.RWMutex
+	ws       websocket.Upgrader
+	configWS *config.CfgWebSocket
+	mutex    sync.RWMutex
 }
 
 func NewChatHandler(
 	ws websocket.Upgrader,
+	configWS *config.CfgWebSocket,
 ) ChatHandler {
 	return &chatHandler{
-		ws: ws,
+		ws:       ws,
+		configWS: configWS,
 	}
 }
 
 // Обновление http до web socket
 func (ch *chatHandler) ConnectionWS(c *gin.Context) {
+	var wg sync.WaitGroup
+
+	//userID, ok := c.Get("userID")
+	//if !ok {
+	//	log.Println("Connect web socket get user id error")
+	//	return
+	//}
+
 	conn, err := ch.ws.Upgrade(c.Writer, c.Request, nil)
+	defer conn.Close()
+
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
 
 	if err != nil {
 		if websocket.IsWebSocketUpgrade(c.Request) {
@@ -59,48 +75,95 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 		return
 	}
 
-	ch.client = &client{
+	wg.Add(2)
+	clientConn := &client{
 		conn:    conn,
 		send:    make(chan []byte, 256),
 		receive: make(chan []byte, 256),
+		wg:      &wg,
 		id:      1, // todo: нужно получить этот ID
+		//id: userID,
 	}
 
-	go ch.readMessage()
-	go ch.writeMessage()
+	go clientConn.readMessage(ctx)
+	go clientConn.writeMessage(ctx)
 	log.Println("Web socket connected")
+
+	wg.Wait()
 
 	return
 }
 
 // Закрыть соединение web socket
-func (ch *chatHandler) Close() error {
-	if err := ch.conn.Close(); err != nil {
+func (c *client) Close() error {
+	if err := c.conn.Close(); err != nil {
 		return fmt.Errorf("Web socket connection close error: %w", err)
 	}
 	return nil
 }
 
-func (ch *chatHandler) readMessage() error {
-	for {
-		_, msg, err := ch.conn.ReadMessage()
+func (c *client) readMessage(ctx context.Context) error {
+	defer func() {
+		c.wg.Done()
+
+		err := c.Close()
 		if err != nil {
+			log.Printf("Error close client: %v", err)
+			return
+		}
+		return
+	}()
+
+	if err := c.conn.SetReadDeadline(time.Now().Add(60 * time.Second)); err != nil { // todo: подсоединить конфиг для время жизни
+		return fmt.Errorf("Error setting read deadline: %w", err)
+	}
+
+	for {
+		_, msg, err := c.conn.ReadMessage()
+		if err != nil {
+			if websocket.IsCloseError(err) {
+				log.Println("Web socket connection close")
+				break
+			}
 			return fmt.Errorf("Error read messange: %w", err)
 		}
 
-		ch.client.receive <- msg // todo: пока просто отправим его
-
+		c.receive <- msg // todo: пока просто отправим его
+		c.pongHandler()
 	}
+	return nil
 }
 
-func (ch *chatHandler) writeMessage() error {
+func (c *client) writeMessage(ctx context.Context) error {
+	defer c.wg.Done()
+
+	pingTicker := time.NewTicker(50 * time.Second)
+	defer pingTicker.Stop()
+
 	for {
 		select {
-		case msg := <-ch.client.receive:
-			if err := ch.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+		case msg := <-c.receive:
+			if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
 				return fmt.Errorf("Error send message: %w", err)
 			}
+		case <-pingTicker.C:
+			if err := c.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				return fmt.Errorf("Error send ping: %w", err)
+			}
+		case <-ctx.Done():
+			return nil
 		}
 
 	}
+	return nil
+}
+
+func (c *client) pongHandler() {
+	c.conn.SetPongHandler(func(string) error {
+		if err := c.conn.SetReadDeadline(time.Now().Add(60 * time.Second)); err != nil {
+			return fmt.Errorf("Error setting read deadline: %w", err)
+		}
+		return nil
+	})
+	return
 }
