@@ -2,11 +2,12 @@ package service
 
 import (
 	"errors"
-	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
-	"github.com/ChanKachan/bill-split-app/internal/domain/repository"
-	"github.com/ChanKachan/bill-split-app/internal/utils"
 	"os"
 	"strconv"
+
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository/postgres"
+	"github.com/ChanKachan/bill-split-app/internal/utils"
 )
 
 type AuthService interface {
@@ -15,10 +16,10 @@ type AuthService interface {
 }
 
 type authService struct {
-	userRepo repository.UserRepository
+	userRepo postgres.UserRepository
 }
 
-func NewAuthService(userRepo repository.UserRepository) AuthService {
+func NewAuthService(userRepo postgres.UserRepository) AuthService {
 	return &authService{
 		userRepo: userRepo,
 	}

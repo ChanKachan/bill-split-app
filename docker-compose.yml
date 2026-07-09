@@ -12,6 +12,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:latest
+    container_name: redis_container
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    restart: always
+    command: redis-server --appendonly yes #  включает режим RDB/AOF для сохранения данных на диск
+    volumes:
+      - redis_data:/data
 
   app:
     build: .
@@ -27,6 +36,7 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   postgres_network:

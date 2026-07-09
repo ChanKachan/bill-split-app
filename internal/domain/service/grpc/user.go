@@ -2,8 +2,9 @@ package grpcService
 
 import (
 	"context"
+
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
-	"github.com/ChanKachan/bill-split-app/internal/domain/repository"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository/postgres"
 	"github.com/ChanKachan/bill-split-app/internal/utils"
 	proto "github.com/ChanKachan/bill-split-app/proto/this"
 
@@ -12,11 +13,11 @@ import (
 )
 
 type userService struct {
-	userRepo repository.UserRepository
+	userRepo postgres.UserRepository
 	proto.UnimplementedUserServiceServer
 }
 
-func NewUserService(userRepo repository.UserRepository) proto.UserServiceServer {
+func NewUserService(userRepo postgres.UserRepository) proto.UserServiceServer {
 	return &userService{
 		userRepo: userRepo,
 	}

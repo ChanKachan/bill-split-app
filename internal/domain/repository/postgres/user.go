@@ -1,15 +1,16 @@
-package repository
+package postgres
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UserRepository interface {

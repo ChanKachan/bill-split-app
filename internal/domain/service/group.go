@@ -3,10 +3,12 @@ package service
 import (
 	"context"
 	"errors"
+
 	"github.com/ChanKachan/bill-split-app/internal"
 	groupStruct "github.com/ChanKachan/bill-split-app/internal/domain/entity/group"
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/groupMembers"
-	"github.com/ChanKachan/bill-split-app/internal/domain/repository"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository/postgres"
+
 	"log"
 	"time"
 )
@@ -26,10 +28,10 @@ type GroupService interface {
 	GetGroupInfoWithMembers(ctx context.Context, groupId int, userInfo internal.UserInfo) (groupStruct.Group, []groupMembers.GroupMembers, error)
 }
 type group struct {
-	groupRepo repository.GroupRepository
+	groupRepo postgres.GroupRepository
 }
 
-func NewGroupService(groupRepo repository.GroupRepository) GroupService {
+func NewGroupService(groupRepo postgres.GroupRepository) GroupService {
 	return &group{
 		groupRepo: groupRepo,
 	}

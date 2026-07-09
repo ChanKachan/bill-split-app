@@ -1,12 +1,13 @@
-package repository
+package postgres
 
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/group"
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/groupMembers"
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

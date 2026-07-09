@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/cost"
-	"github.com/ChanKachan/bill-split-app/internal/domain/repository"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository/postgres"
 )
 
 type CostService interface {
@@ -17,11 +18,11 @@ type CostService interface {
 }
 
 type costService struct {
-	costRepo repository.CostRepository
+	costRepo postgres.CostRepository
 	groupSvc GroupService
 }
 
-func NewCostService(costRepo repository.CostRepository, groupSvc GroupService) CostService {
+func NewCostService(costRepo postgres.CostRepository, groupSvc GroupService) CostService {
 	return &costService{
 		costRepo: costRepo,
 		groupSvc: groupSvc,

@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
+
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/user"
-	"github.com/ChanKachan/bill-split-app/internal/domain/repository"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository/postgres"
 )
 
 type UserHttpService interface {
@@ -11,10 +12,10 @@ type UserHttpService interface {
 	GetUser(ctx context.Context, userID int) (*user.User, error)
 }
 type userHttpService struct {
-	userRepo repository.UserRepository
+	userRepo postgres.UserRepository
 }
 
-func NewUserHttpService(userRepo repository.UserRepository) UserHttpService {
+func NewUserHttpService(userRepo postgres.UserRepository) UserHttpService {
 	return &userHttpService{
 		userRepo: userRepo,
 	}

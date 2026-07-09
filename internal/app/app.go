@@ -1,20 +1,24 @@
 package app
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"sync"
 
 	"github.com/ChanKachan/bill-split-app/internal/config"
-	repository "github.com/ChanKachan/bill-split-app/internal/domain/repository"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository/postgres"
+	"github.com/ChanKachan/bill-split-app/internal/domain/repository/redis/cache"
 	"github.com/ChanKachan/bill-split-app/internal/domain/service"
 	grpcService "github.com/ChanKachan/bill-split-app/internal/domain/service/grpc"
 	"github.com/ChanKachan/bill-split-app/internal/handler"
 	"github.com/ChanKachan/bill-split-app/internal/handler/ws/chat"
 	"github.com/ChanKachan/bill-split-app/middleware"
 	proto "github.com/ChanKachan/bill-split-app/proto/this"
+	"github.com/ChanKachan/bill-split-app/repository"
 	"github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -26,16 +30,28 @@ func Start() error {
 	// configs
 	dbpool := config.NewPostgres(config.InitDb())
 	configWS := config.GetConfigWebSocket()
+	cfgRedis := config.InitRedis()
 
 	defer dbpool.DbClose()
 
+	chatRedisDB := repository.NewRedisDB(
+		&redis.Options{
+			Password: cfgRedis.Password,
+			DB:       1,
+			Addr:     fmt.Sprintf("%s:%d", cfgRedis.Host, cfgRedis.Port),
+		},
+	)
+
+	// Cache
+	chatCache := cache.NewChatCache(chatRedisDB)
+
 	// User
-	userRepo := repository.NewUserRepository(dbpool.GetPGXPool())
+	userRepo := postgres.NewUserRepository(dbpool.GetPGXPool())
 	userService := service.NewUserHttpService(userRepo)
 	userGrpcService := grpcService.NewUserService(userRepo)
 
 	// Group
-	groupRepo := repository.NewGroupRepository(dbpool.GetPGXPool())
+	groupRepo := postgres.NewGroupRepository(dbpool.GetPGXPool())
 	groupService := service.NewGroupService(groupRepo)
 
 	// auth
@@ -46,7 +62,7 @@ func Start() error {
 	optimizationService := service.NewOptimizationService()
 
 	// cost
-	costRepository := repository.NewCostRepository(dbpool.GetPGXPool())
+	costRepository := postgres.NewCostRepository(dbpool.GetPGXPool())
 	costService := service.NewCostService(costRepository, groupService)
 
 	//handlers
