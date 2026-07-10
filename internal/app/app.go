@@ -11,6 +11,7 @@ import (
 	"github.com/ChanKachan/bill-split-app/internal/domain/repository/postgres"
 	"github.com/ChanKachan/bill-split-app/internal/domain/repository/redis/cache"
 	"github.com/ChanKachan/bill-split-app/internal/domain/service"
+	chatService "github.com/ChanKachan/bill-split-app/internal/domain/service/chat"
 	grpcService "github.com/ChanKachan/bill-split-app/internal/domain/service/grpc"
 	"github.com/ChanKachan/bill-split-app/internal/handler"
 	"github.com/ChanKachan/bill-split-app/internal/handler/ws/chat"
@@ -42,8 +43,10 @@ func Start() error {
 		},
 	)
 
-	// Cache
+	// Chat
 	chatCache := cache.NewChatCache(chatRedisDB)
+	chatRepo := postgres.NewGroupRepository(dbpool.GetPGXPool())
+	chatServ := chatService.NewChatService(chatCache, chatRepo)
 
 	// User
 	userRepo := postgres.NewUserRepository(dbpool.GetPGXPool())
@@ -76,6 +79,7 @@ func Start() error {
 			WriteBufferSize: 1024,
 		},
 		configWS,
+		chatServ,
 	)
 
 	handlers := handler.NewHandlers(

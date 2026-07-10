@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ChanKachan/bill-split-app/internal/config"
+	"github.com/ChanKachan/bill-split-app/internal/domain/service/chat"
 	"github.com/ChanKachan/bill-split-app/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -20,18 +21,21 @@ type ChatHandler interface {
 }
 
 type chatHandler struct {
-	ws       websocket.Upgrader
-	configWS *config.CfgWebSocket
-	mutex    sync.RWMutex
+	ws          websocket.Upgrader
+	configWS    *config.CfgWebSocket
+	chatService chat.ChatService
+	mutex       sync.RWMutex
 }
 
 func NewChatHandler(
 	ws websocket.Upgrader,
 	configWS *config.CfgWebSocket,
+	chatService chat.ChatService,
 ) ChatHandler {
 	return &chatHandler{
-		ws:       ws,
-		configWS: configWS,
+		ws:          ws,
+		configWS:    configWS,
+		chatService: chatService,
 	}
 }
 
