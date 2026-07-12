@@ -12,4 +12,5 @@ FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/backend .
 COPY .env .env
+COPY migrations ./migrations
 ENTRYPOINT [ "./backend" ]
