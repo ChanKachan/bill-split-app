@@ -20,6 +20,7 @@ type RedisDB interface {
 	LPush(ctx context.Context, key string, values ...string) (int64, error)
 	LPop(ctx context.Context, key string) (string, error)
 	LLen(ctx context.Context, key string) (int64, error)
+	LRange(ctx context.Context, key string, start, end int64) ([]string, error)
 	RPush(ctx context.Context, key string, values ...interface{}) (int64, error)
 	RPop(ctx context.Context, key string) (string, error)
 }
@@ -83,6 +84,11 @@ func (r *redisDB) LPop(ctx context.Context, key string) (string, error) {
 func (r *redisDB) LLen(ctx context.Context, key string) (int64, error) {
 	return r.client.LLen(ctx, key).Result()
 }
+
+func (r *redisDB) LRange(ctx context.Context, key string, start, end int64) ([]string, error) {
+	return r.client.LRange(ctx, key, start, end).Result()
+}
+
 func (r *redisDB) RPush(ctx context.Context, key string, values ...interface{}) (int64, error) {
 	return r.client.RPush(ctx, key, values).Result()
 }

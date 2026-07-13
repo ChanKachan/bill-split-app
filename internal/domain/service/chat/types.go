@@ -5,3 +5,7 @@ type RequestSendMessage struct {
 	Text   string
 	UserID int
 }
+
+type RequestGetChat struct {
+	ChatId int
+}

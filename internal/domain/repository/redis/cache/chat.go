@@ -4,13 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/ChanKachan/bill-split-app/repository"
 	"github.com/redis/go-redis/v9"
-	"time"
 )
 
 type ChatCache interface {
 	GetMessage(ctx context.Context, chatID string) (string, error)
+	SaveMessage(ctx context.Context, chatID string, msg string, timeLiveSecond int) error
+	AddMessageToList(ctx context.Context, chatID string, msg ...string) error
+	DelMessageFromList(ctx context.Context, chatID string) error
+	GetMessagesFromList(ctx context.Context, chatID string, start, end int64) ([]string, error)
 }
 
 type chatCache struct {
@@ -56,4 +61,52 @@ func (c *chatCache) SaveMessage(ctx context.Context, chatID string, msg string, 
 	}
 
 	return nil
+}
+
+func (c *chatCache) AddMessageToList(ctx context.Context, chatID string, msg ...string) error {
+	ctx, cancel := context.WithTimeout(ctx, 25*time.Second)
+	defer cancel()
+
+	_, err := c.redisDB.LPush(
+		ctx,
+		fmt.Sprintf("group_message:%s", chatID),
+		msg...,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *chatCache) DelMessageFromList(ctx context.Context, chatID string) error {
+	ctx, cancel := context.WithTimeout(ctx, 25*time.Second)
+	defer cancel()
+
+	_, err := c.redisDB.LPop(
+		ctx,
+		fmt.Sprintf("group_message:%s", chatID),
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *chatCache) GetMessagesFromList(ctx context.Context, chatID string, start, end int64) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 25*time.Second)
+	defer cancel()
+
+	messages, err := c.redisDB.LRange(
+		ctx,
+		fmt.Sprintf("group_message:%s", chatID),
+		start,
+		end,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return messages, nil
 }
