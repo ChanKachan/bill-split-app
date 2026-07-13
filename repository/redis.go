@@ -14,6 +14,14 @@ type RedisDB interface {
 	Get(ctx context.Context, key string) (string, error)
 	Del(ctx context.Context, keys ...string) error
 	Exists(ctx context.Context, keys ...string) (int64, error)
+	HGet(ctx context.Context, key string, field string) (string, error)
+	HSet(ctx context.Context, key string, value interface{}, expiration time.Duration) error
+	HDel(ctx context.Context, key string, field ...string) error
+	LPush(ctx context.Context, key string, values ...string) (int64, error)
+	LPop(ctx context.Context, key string) (string, error)
+	LLen(ctx context.Context, key string) (int64, error)
+	RPush(ctx context.Context, key string, values ...interface{}) (int64, error)
+	RPop(ctx context.Context, key string) (string, error)
 }
 
 type redisDB struct {
@@ -50,4 +58,35 @@ func (r *redisDB) Del(ctx context.Context, keys ...string) error {
 
 func (r *redisDB) Exists(ctx context.Context, keys ...string) (int64, error) {
 	return r.client.Exists(ctx, keys...).Result()
+}
+
+func (r *redisDB) HGet(ctx context.Context, key string, field string) (string, error) {
+	return r.client.HGet(ctx, key, field).Result()
+}
+
+func (r *redisDB) HSet(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+	return r.client.HSet(ctx, key, value, expiration).Err()
+}
+
+func (r *redisDB) HDel(ctx context.Context, key string, field ...string) error {
+	return r.client.HDel(ctx, key, field...).Err()
+}
+
+func (r *redisDB) LPush(ctx context.Context, key string, values ...string) (int64, error) {
+	return r.client.LPush(ctx, key, values).Result()
+}
+
+func (r *redisDB) LPop(ctx context.Context, key string) (string, error) {
+	return r.client.LPop(ctx, key).Result()
+}
+
+func (r *redisDB) LLen(ctx context.Context, key string) (int64, error) {
+	return r.client.LLen(ctx, key).Result()
+}
+func (r *redisDB) RPush(ctx context.Context, key string, values ...interface{}) (int64, error) {
+	return r.client.RPush(ctx, key, values).Result()
+}
+
+func (r *redisDB) RPop(ctx context.Context, key string) (string, error) {
+	return r.client.RPop(ctx, key).Result()
 }

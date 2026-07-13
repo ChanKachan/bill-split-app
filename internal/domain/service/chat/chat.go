@@ -8,6 +8,7 @@ import (
 )
 
 type ChatService interface {
+	SendMessage(req RequestSendMessage) error
 }
 
 type chatService struct {
