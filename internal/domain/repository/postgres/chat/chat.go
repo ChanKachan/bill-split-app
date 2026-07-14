@@ -3,14 +3,15 @@ package chat
 import (
 	"context"
 	"fmt"
+	entityChat "github.com/ChanKachan/bill-split-app/internal/domain/entity/chat"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ChatRepository interface {
-	CreateMessage(ctx context.Context, messageData CreateMessangeRequest) (int, error)
-	GetLastMessage(ctx context.Context, chatId int) ([]GetMessagesResponse, error)
+	CreateMessage(ctx context.Context, messageData CreateMessageRequest) (int, error)
+	GetLastMessages(ctx context.Context, chatId int) ([]entityChat.Message, error)
 }
 
 type chatRepository struct {
@@ -23,7 +24,7 @@ func NewChatRepository(db *pgxpool.Pool) ChatRepository {
 	}
 }
 
-func (c *chatRepository) CreateMessage(ctx context.Context, messageData CreateMessangeRequest) (int, error) {
+func (c *chatRepository) CreateMessage(ctx context.Context, messageData CreateMessageRequest) (int, error) {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -56,7 +57,7 @@ func (c *chatRepository) CreateMessage(ctx context.Context, messageData CreateMe
 }
 
 // Возращает последние 50 сообщений
-func (c *chatRepository) GetLastMessage(ctx context.Context, chatId int) ([]GetMessagesResponse, error) {
+func (c *chatRepository) GetLastMessages(ctx context.Context, chatId int) ([]entityChat.Message, error) {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -80,16 +81,16 @@ func (c *chatRepository) GetLastMessage(ctx context.Context, chatId int) ([]GetM
 
 	defer rows.Close()
 
-	var datas []GetMessagesResponse
+	var datas []entityChat.Message
 	for rows.Next() {
-		var data GetMessagesResponse
+		var data entityChat.Message
 
 		err := rows.Scan(
-			&data.MessageID,
-			&data.UserID,
-			&data.Message,
+			&data.Id,
+			&data.UserId,
+			&data.Text,
 			&data.DateUpdate,
-			&data.ChatID,
+			&data.ChatId,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error getting last message: %w", err)

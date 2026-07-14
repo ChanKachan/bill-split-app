@@ -3,15 +3,16 @@ package handler
 import (
 	"context"
 	"errors"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/ChanKachan/bill-split-app/internal"
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/group"
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/groupMembers"
 	"github.com/ChanKachan/bill-split-app/internal/domain/service"
 	"github.com/gin-gonic/gin"
-	"log"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 type GroupHandler interface {

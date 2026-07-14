@@ -13,8 +13,8 @@ import (
 type ChatCache interface {
 	GetMessage(ctx context.Context, chatID string) (string, error)
 	SaveMessage(ctx context.Context, chatID string, msg string, timeLiveSecond int) error
-	AddMessageToList(ctx context.Context, chatID string, msg ...string) error
-	DelMessageFromList(ctx context.Context, chatID string) error
+	AddMessageOnLeftToList(ctx context.Context, chatID string, dataMessage ...string) error
+	DelOnRightMessageFromList(ctx context.Context, chatID string) error
 	GetMessagesFromList(ctx context.Context, chatID string, start, end int64) ([]string, error)
 }
 
@@ -63,7 +63,7 @@ func (c *chatCache) SaveMessage(ctx context.Context, chatID string, msg string, 
 	return nil
 }
 
-func (c *chatCache) AddMessageToList(ctx context.Context, chatID string, msg ...string) error {
+func (c *chatCache) AddMessageOnLeftToList(ctx context.Context, chatID string, msg ...string) error {
 	ctx, cancel := context.WithTimeout(ctx, 25*time.Second)
 	defer cancel()
 
@@ -79,11 +79,11 @@ func (c *chatCache) AddMessageToList(ctx context.Context, chatID string, msg ...
 	return nil
 }
 
-func (c *chatCache) DelMessageFromList(ctx context.Context, chatID string) error {
+func (c *chatCache) DelOnRightMessageFromList(ctx context.Context, chatID string) error {
 	ctx, cancel := context.WithTimeout(ctx, 25*time.Second)
 	defer cancel()
 
-	_, err := c.redisDB.LPop(
+	_, err := c.redisDB.RPop(
 		ctx,
 		fmt.Sprintf("group_message:%s", chatID),
 	)

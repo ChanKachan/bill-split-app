@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/ChanKachan/bill-split-app/internal/config"
 	"github.com/ChanKachan/bill-split-app/internal/domain/service/chat"
@@ -80,94 +79,20 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 	}
 
 	wg.Add(2)
-	clientConn := &client{
-		conn:    conn,
-		send:    make(chan []byte, 256),
-		receive: make(chan []byte, 256),
-		wg:      &wg,
-		id:      1, // todo: нужно получить этот ID
-		//id: userID,
-	}
 
-	go clientConn.readMessage(ctx)
-	go clientConn.writeMessage(ctx)
+	clientConn := newClient(
+		conn,
+		make(chan []byte, 256),
+		make(chan []byte, 256),
+		&wg,
+		1, // todo: нужно получить этот ID
+	)
+
+	go clientConn.reader(ctx)
+	go clientConn.writer(ctx)
 	log.Println("Web socket connected")
 
 	wg.Wait()
 
-	return
-}
-
-// Закрыть соединение web socket
-func (c *client) Close() error {
-	if err := c.conn.Close(); err != nil {
-		return fmt.Errorf("Web socket connection close error: %w", err)
-	}
-	return nil
-}
-
-func (c *client) readMessage(ctx context.Context) error {
-	defer func() {
-		c.wg.Done()
-
-		err := c.Close()
-		if err != nil {
-			log.Printf("Error close client: %v", err)
-			return
-		}
-		return
-	}()
-
-	if err := c.conn.SetReadDeadline(time.Now().Add(60 * time.Second)); err != nil { // todo: подсоединить конфиг для время жизни
-		return fmt.Errorf("Error setting read deadline: %w", err)
-	}
-
-	for {
-		_, msg, err := c.conn.ReadMessage()
-		if err != nil {
-			if websocket.IsCloseError(err) {
-				log.Println("Web socket connection close")
-				break
-			}
-			return fmt.Errorf("Error read messange: %w", err)
-		}
-
-		c.receive <- msg // todo: пока просто отправим его
-		c.pongHandler()
-	}
-	return nil
-}
-
-func (c *client) writeMessage(ctx context.Context) error {
-	defer c.wg.Done()
-
-	pingTicker := time.NewTicker(50 * time.Second)
-	defer pingTicker.Stop()
-
-	for {
-		select {
-		case msg := <-c.receive:
-			if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-				return fmt.Errorf("Error send message: %w", err)
-			}
-		case <-pingTicker.C:
-			if err := c.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-				return fmt.Errorf("Error send ping: %w", err)
-			}
-		case <-ctx.Done():
-			return nil
-		}
-
-	}
-	return nil
-}
-
-func (c *client) pongHandler() {
-	c.conn.SetPongHandler(func(string) error {
-		if err := c.conn.SetReadDeadline(time.Now().Add(60 * time.Second)); err != nil {
-			return fmt.Errorf("Error setting read deadline: %w", err)
-		}
-		return nil
-	})
 	return
 }

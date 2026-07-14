@@ -5,9 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
+	entityChat "github.com/ChanKachan/bill-split-app/internal/domain/entity/chat"
 	"github.com/ChanKachan/bill-split-app/internal/domain/repository/postgres/chat"
 	"github.com/ChanKachan/bill-split-app/internal/domain/repository/redis/cache"
+	"github.com/ChanKachan/bill-split-app/internal/utils"
 )
 
 type ChatService interface {
@@ -46,13 +49,55 @@ func (cs *chatService) SendMessage(ctx context.Context, req RequestSendMessage) 
 		return fmt.Errorf("data is empty: %v", req)
 	}
 
-	messages, err := cs.GetChat(ctx, RequestGetChat{ChatId: req.ChatId})
+	timeNowStr := time.Now().Format("02-01-2006 15:04:05")
+
+	msgID, err := cs.chatRepo.CreateMessage(ctx, chat.CreateMessageRequest{
+		UserID:     req.UserID,
+		Message:    req.Text,
+		ChatID:     req.ChatId,
+		DateCreate: timeNowStr,
+		DateUpdate: timeNowStr,
+	})
 	if err != nil {
-		return fmt.Errorf("send message error get chat: %w", err)
+		return fmt.Errorf("create chat message error: %w", err)
 	}
 
-	if len(messages) == 0 {
-
+	msgData := entityChat.Message{
+		Id:         msgID,
+		Text:       req.Text,
+		UserId:     req.UserID,
+		ChatId:     req.ChatId,
+		DateCreate: timeNowStr,
+		DateUpdate: timeNowStr,
 	}
+
+	err = cs.updateMessageToCache(ctx, msgData)
+	if err != nil {
+		return fmt.Errorf("update message to cache error: %w", err)
+	}
+
+	return nil
+}
+
+// Обновляем кэш если он заполнен
+// Если элементов в листе меньше 50, то мы добавляем элемент без удаления правого (раннего сообщения)
+func (cs *chatService) updateMessageToCache(ctx context.Context, chatData entityChat.Message) error {
+	messages, err := cs.chatRepo.GetLastMessages(ctx, chatData.Id)
+	if err != nil {
+		return fmt.Errorf("get last messages from repository error: %w", err)
+	}
+
+	err = cs.chatCache.AddMessageOnLeftToList(ctx, strconv.Itoa(chatData.ChatId), utils.ConvertStructsToString(chatData)...)
+	if err != nil {
+		return fmt.Errorf("add message to cache error: %w", err)
+	}
+
+	if len(messages) > 50 {
+		err = cs.chatCache.DelOnRightMessageFromList(ctx, strconv.Itoa(chatData.ChatId))
+		if err != nil {
+			return fmt.Errorf("delete on message from cache error: %w", err)
+		}
+	}
+
 	return nil
 }
