@@ -12,25 +12,28 @@ import (
 )
 
 type client struct {
-	conn    *websocket.Conn
-	send    chan []byte // Сообщение, которое мы хотим отправить (writer)
-	receive chan []byte // Сообщение, которое мы получаем (reader)
-	wg      *sync.WaitGroup
-	id      int
+	conn        *websocket.Conn
+	send        chan []byte // Сообщение, которое мы хотим отправить (writer)
+	receive     chan []byte // Сообщение, которое мы получаем (reader)
+	wg          *sync.WaitGroup
+	chatService chat.ChatService
+	id          int
 }
 
 func newClient(
 	conn *websocket.Conn,
 	send, receive chan []byte,
 	wg *sync.WaitGroup,
+	chatService chat.ChatService,
 	id int,
 ) *client {
 	return &client{
-		conn:    conn,
-		send:    send,
-		receive: receive,
-		wg:      wg,
-		id:      id,
+		conn:        conn,
+		send:        send,
+		receive:     receive,
+		wg:          wg,
+		chatService: chatService,
+		id:          id,
 	}
 }
 
@@ -41,11 +44,10 @@ func (c *client) saveMessageToDB(ctx context.Context, chatID, userID int, msg st
 		UserID: userID,
 	}
 
-	// todo: продумать логику, по которому мы будем обращаться к сервису чат
-	//err := c.chatService.SendMessage(ctx, data)
-	//if err != nil {
-	//	return fmt.Errorf("Error send message: %w", err)
-	//}
+	err := c.chatService.SendMessage(ctx, data)
+	if err != nil {
+		return fmt.Errorf("Error send message: %w", err)
+	}
 	return nil
 }
 
@@ -80,9 +82,15 @@ func (c *client) reader(ctx context.Context) error {
 				log.Println("Web socket connection close")
 				break
 			}
+			log.Println("Web socket error read message:", err)
 			return fmt.Errorf("Error read messange: %w", err)
 		}
 
+		err = c.saveMessageToDB(ctx, 1, 1, string(msg)) // todo: стоят замоканные данные
+		if err != nil {
+			log.Println("Web socket error save message:", err)
+			return fmt.Errorf("Error save message: %w", err)
+		}
 		c.receive <- msg // todo: пока просто отправим его
 		c.pongHandler()
 	}

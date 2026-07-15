@@ -85,6 +85,7 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 		make(chan []byte, 256),
 		make(chan []byte, 256),
 		&wg,
+		ch.chatService,
 		1, // todo: нужно получить этот ID
 	)
 

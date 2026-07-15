@@ -6,8 +6,8 @@ type CreateMessageRequest struct {
 	UserID     int
 	Message    string
 	ChatID     int
-	DateCreate string `example:"02-01-2006 15:04:05"`
-	DateUpdate string `example:"02-01-2006 15:04:05"`
+	DateCreate time.Time
+	DateUpdate time.Time
 }
 
 type GetMessagesResponse struct {

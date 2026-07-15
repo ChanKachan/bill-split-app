@@ -49,14 +49,15 @@ func (cs *chatService) SendMessage(ctx context.Context, req RequestSendMessage) 
 		return fmt.Errorf("data is empty: %v", req)
 	}
 
-	timeNowStr := time.Now().Format("02-01-2006 15:04:05")
+	timeNow := time.Now()
+	timeNowStr := timeNow.Format("02-01-2006 15:04:05")
 
 	msgID, err := cs.chatRepo.CreateMessage(ctx, chat.CreateMessageRequest{
 		UserID:     req.UserID,
 		Message:    req.Text,
 		ChatID:     req.ChatId,
-		DateCreate: timeNowStr,
-		DateUpdate: timeNowStr,
+		DateCreate: timeNow,
+		DateUpdate: timeNow,
 	})
 	if err != nil {
 		return fmt.Errorf("create chat message error: %w", err)

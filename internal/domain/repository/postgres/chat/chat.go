@@ -3,8 +3,9 @@ package chat
 import (
 	"context"
 	"fmt"
-	entityChat "github.com/ChanKachan/bill-split-app/internal/domain/entity/chat"
 	"time"
+
+	entityChat "github.com/ChanKachan/bill-split-app/internal/domain/entity/chat"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -66,7 +67,7 @@ func (c *chatRepository) GetLastMessages(ctx context.Context, chatId int) ([]ent
     	id,
     	user_id,
     	message,
-    	data_create,
+    	date_create,
     	date_update,
     	chat_id
 	FROM chat_message 
@@ -89,6 +90,7 @@ func (c *chatRepository) GetLastMessages(ctx context.Context, chatId int) ([]ent
 			&data.Id,
 			&data.UserId,
 			&data.Text,
+			&data.DateCreate,
 			&data.DateUpdate,
 			&data.ChatId,
 		)
