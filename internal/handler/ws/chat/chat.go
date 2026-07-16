@@ -42,17 +42,19 @@ func NewChatHandler(
 func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 	var wg sync.WaitGroup
 
-	//userID, ok := c.Get("userID")
-	//if !ok {
-	//	log.Println("Connect web socket get user id error")
-	//	return
-	//}
+	rawUserID, exists := c.Get("userID")
+	if !exists {
+		log.Println("Connect web socket get user userID error")
+		return
+	}
+
+	userID, ok := rawUserID.(int)
+	if !ok {
+		log.Println("Connect web socket get user ID error because type isn't int")
+		return
+	}
 
 	conn, err := ch.ws.Upgrade(c.Writer, c.Request, nil)
-	defer conn.Close()
-
-	ctx, cancel := context.WithCancel(c.Request.Context())
-	defer cancel()
 
 	if err != nil {
 		if websocket.IsWebSocketUpgrade(c.Request) {
@@ -78,6 +80,8 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 		return
 	}
 
+	defer conn.Close()
+
 	wg.Add(2)
 
 	clientConn := newClient(
@@ -86,8 +90,11 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 		make(chan []byte, 256),
 		&wg,
 		ch.chatService,
-		1, // todo: нужно получить этот ID
+		userID,
 	)
+
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
 
 	go clientConn.reader(ctx)
 	go clientConn.writer(ctx)

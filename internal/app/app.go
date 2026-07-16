@@ -111,12 +111,12 @@ func Start() error {
 
 	r.POST("/register", handlers.AuthHandler.RegisterUser)
 	r.POST("/auth", handlers.AuthHandler.Auth)
-	r.GET("/ws", chatHandler.ConnectionWS)
 
 	api := r.Group("/api", middleware.AuthMiddleware())
 	{
 		// chat
 		//api.POST("/ws", chatHandler.ConnectionWS)
+		api.GET("/ws", chatHandler.ConnectionWS)
 		// Оптимизация
 		api.POST("/optimize", optimizationHandler.Optimize)
 		// Пользователь

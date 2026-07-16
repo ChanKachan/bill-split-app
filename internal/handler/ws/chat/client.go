@@ -17,7 +17,7 @@ type client struct {
 	receive     chan []byte // Сообщение, которое мы получаем (reader)
 	wg          *sync.WaitGroup
 	chatService chat.ChatService
-	id          int
+	userID      int
 }
 
 func newClient(
@@ -25,7 +25,7 @@ func newClient(
 	send, receive chan []byte,
 	wg *sync.WaitGroup,
 	chatService chat.ChatService,
-	id int,
+	userID int,
 ) *client {
 	return &client{
 		conn:        conn,
@@ -33,7 +33,7 @@ func newClient(
 		receive:     receive,
 		wg:          wg,
 		chatService: chatService,
-		id:          id,
+		userID:      userID,
 	}
 }
 
@@ -86,7 +86,7 @@ func (c *client) reader(ctx context.Context) error {
 			return fmt.Errorf("Error read messange: %w", err)
 		}
 
-		err = c.saveMessageToDB(ctx, 1, 1, string(msg)) // todo: стоят замоканные данные
+		err = c.saveMessageToDB(ctx, 1, c.userID, string(msg)) // todo: стоят замоканные данные
 		if err != nil {
 			log.Println("Web socket error save message:", err)
 			return fmt.Errorf("Error save message: %w", err)
