@@ -22,7 +22,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 )
 
@@ -89,67 +88,12 @@ func Start() error {
 		optimizationHandler,
 		userHandler,
 		costHandler,
+		chatHandler,
 	)
-	r := handlers.InitRoutes()
 
-	// Добавляем CORS middleware (без использования дополнительных пакетов)
-	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ALLOWED_ORIGINS"))
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Origin")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length")
-
-		// Handle preflight requests
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	})
-
-	r.POST("/register", handlers.AuthHandler.RegisterUser)
-	r.POST("/auth", handlers.AuthHandler.Auth)
-
-	api := r.Group("/api", middleware.AuthMiddleware())
-	{
-		// chat
-		//api.POST("/ws", chatHandler.ConnectionWS)
-		api.GET("/ws", chatHandler.ConnectionWS)
-		// Оптимизация
-		api.POST("/optimize", optimizationHandler.Optimize)
-		// Пользователь
-		apiUser := api.Group("/user")
-		{
-			apiUser.GET("/get/groups", handlers.GroupHandler.GetUserGroups)
-			apiUser.GET("/get", handlers.UserHandler.GetUserData)
-			apiUser.PATCH("/update", handlers.UserHandler.UpdateUserData)
-		}
-
-		// Группа
-		apiGroup := api.Group("/group")
-		{
-			apiGroup.GET("/get/members", handlers.GroupHandler.GetUsersInGroup)
-			apiGroup.GET("/:id", handlers.GroupHandler.GetGroupWithMembers)
-			apiGroup.POST("/create", handlers.GroupHandler.CreateGroup)
-			apiGroup.POST("/add/member", handlers.GroupHandler.AddMember)
-			apiGroup.POST("/leave/member", handlers.GroupHandler.LeaveGroup)
-			apiGroup.POST("/remove/member", handlers.GroupHandler.RemoveUser)
-			apiGroup.POST("/enter/:link", handlers.GroupHandler.AddUserToGroup)
-
-			// Расходы(Cost)
-			apiCost := apiGroup.Group("/cost")
-			{
-				apiCost.POST("/create", handlers.CostHandler.CreateCost)
-				apiCost.GET("/my", handlers.CostHandler.GetMyCosts)
-				apiCost.GET("/group/:groupId", handlers.CostHandler.GetGroupCosts)
-				apiCost.GET("/:id", handlers.CostHandler.GetCost)
-				apiCost.PUT("/:id", handlers.CostHandler.UpdateCost)
-				apiCost.DELETE("/:id", handlers.CostHandler.DeleteCost)
-			}
-		}
-	}
+	cors := middleware.NewCors()
+	auth := middleware.NewMiddleware()
+	r := handlers.InitRoutes(cors, auth)
 
 	// Запускаем HTTP сервер в горутине
 	wg.Add(1)

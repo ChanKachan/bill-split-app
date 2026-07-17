@@ -10,8 +10,18 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type Middleware interface {
+	AuthMiddleware() gin.HandlerFunc
+}
+
+type middleware struct{}
+
+func NewMiddleware() Middleware {
+	return &middleware{}
+}
+
 // AuthMiddleware создает middleware для проверки JWT токена
-func AuthMiddleware() gin.HandlerFunc {
+func (m *middleware) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var tokenString string
 

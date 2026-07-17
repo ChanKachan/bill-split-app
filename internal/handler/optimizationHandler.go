@@ -27,7 +27,7 @@ func (o *optimizationHandler) Optimize(c *gin.Context) {
 	var participants []transfer.Participant
 
 	if err := c.ShouldBind(&participants); err != nil {
-		log.Println("OptimizationHandler.Optimize err:", err)
+		log.Println("optimizationHandler.Optimize err:", err)
 		c.JSON(400, gin.H{
 			"error": err.Error(),
 		})
