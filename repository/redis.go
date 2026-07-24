@@ -23,6 +23,7 @@ type RedisDB interface {
 	LRange(ctx context.Context, key string, start, end int64) ([]string, error)
 	RPush(ctx context.Context, key string, values ...interface{}) (int64, error)
 	RPop(ctx context.Context, key string) (string, error)
+	LTrim(ctx context.Context, key string, start, end int64) error
 }
 
 type redisDB struct {
@@ -95,4 +96,8 @@ func (r *redisDB) RPush(ctx context.Context, key string, values ...interface{}) 
 
 func (r *redisDB) RPop(ctx context.Context, key string) (string, error) {
 	return r.client.RPop(ctx, key).Result()
+}
+
+func (r *redisDB) LTrim(ctx context.Context, key string, start, end int64) error {
+	return r.client.LTrim(ctx, key, start, end).Err()
 }

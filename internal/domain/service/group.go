@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ChanKachan/bill-split-app/internal"
 	groupStruct "github.com/ChanKachan/bill-split-app/internal/domain/entity/group"
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/groupMembers"
 	"github.com/ChanKachan/bill-split-app/internal/domain/repository/postgres"
+	"github.com/ChanKachan/bill-split-app/internal/types"
 
 	"log"
 	"time"
@@ -15,17 +15,17 @@ import (
 
 type GroupService interface {
 	// POST
-	CreateGroup(ctx context.Context, groupInfo groupStruct.Group, userInfo *internal.UserInfo) error
-	AddUserToGroup(ctx context.Context, member groupMembers.GroupMembers, userInfo internal.UserInfo) error
+	CreateGroup(ctx context.Context, groupInfo groupStruct.Group, userInfo *types.UserInfo) error
+	AddUserToGroup(ctx context.Context, member groupMembers.GroupMembers, userInfo types.UserInfo) error
 	LeaveGroup(ctx context.Context, groupId, userId int) error
 	RemoveUserFromGroup(ctx context.Context, groupId, userId, requesterId int) error
-	EnterUserToGroup(ctx context.Context, link string, userInfo internal.UserInfo) (int, error)
+	EnterUserToGroup(ctx context.Context, link string, userInfo types.UserInfo) (int, error)
 
 	// GET
 	GetGroupsById(ctx context.Context, userId int) ([]groupStruct.Group, error)
 	GetGroupMembersByGroupId(ctx context.Context, groupId int) ([]groupMembers.GroupMembers, error)
 	CheckUserInGroup(ctx context.Context, groupId, userId int) (bool, error)
-	GetGroupInfoWithMembers(ctx context.Context, groupId int, userInfo internal.UserInfo) (groupStruct.Group, []groupMembers.GroupMembers, error)
+	GetGroupInfoWithMembers(ctx context.Context, groupId int, userInfo types.UserInfo) (groupStruct.Group, []groupMembers.GroupMembers, error)
 }
 type group struct {
 	groupRepo postgres.GroupRepository
@@ -37,7 +37,7 @@ func NewGroupService(groupRepo postgres.GroupRepository) GroupService {
 	}
 }
 
-func (g *group) EnterUserToGroup(ctx context.Context, link string, userInfo internal.UserInfo) (int, error) {
+func (g *group) EnterUserToGroup(ctx context.Context, link string, userInfo types.UserInfo) (int, error) {
 	if link == "" {
 		return 0, errors.New("link is empty")
 	}
@@ -63,7 +63,7 @@ func (g *group) EnterUserToGroup(ctx context.Context, link string, userInfo inte
 	return groupid, nil
 }
 
-func (g *group) GetGroupInfoWithMembers(ctx context.Context, groupId int, userInfo internal.UserInfo) (groupStruct.Group, []groupMembers.GroupMembers, error) {
+func (g *group) GetGroupInfoWithMembers(ctx context.Context, groupId int, userInfo types.UserInfo) (groupStruct.Group, []groupMembers.GroupMembers, error) {
 	if groupId == 0 {
 		return groupStruct.Group{}, nil, errors.New("invalid group id")
 	}
@@ -195,7 +195,7 @@ func (gr *group) CheckUserInGroup(ctx context.Context, groupId, userId int) (boo
 	return exists, nil
 }
 
-func (g *group) AddUserToGroup(ctx context.Context, member groupMembers.GroupMembers, userInfo internal.UserInfo) error {
+func (g *group) AddUserToGroup(ctx context.Context, member groupMembers.GroupMembers, userInfo types.UserInfo) error {
 	if member.GroupId == 0 || member.UserId == 00 || member.Del == 1 {
 		return errors.New("data is empty")
 	}
@@ -220,7 +220,7 @@ func (g *group) AddUserToGroup(ctx context.Context, member groupMembers.GroupMem
     "date_end": "2022-01-01T00:00:00Z", - дата окончание события
     "amount": 12000 - потраченная сумма во время события
 */
-func (gr *group) CreateGroup(ctx context.Context, groupInfo groupStruct.Group, userInfo *internal.UserInfo) error {
+func (gr *group) CreateGroup(ctx context.Context, groupInfo groupStruct.Group, userInfo *types.UserInfo) error {
 
 	err := gr.groupRepo.TransactionBegin(ctx)
 	if err != nil {

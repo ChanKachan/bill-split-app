@@ -1,4 +1,4 @@
-package internal
+package types
 
 type UserInfo struct {
 	UserId int

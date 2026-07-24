@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ChanKachan/bill-split-app/internal"
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/group"
 	"github.com/ChanKachan/bill-split-app/internal/domain/entity/groupMembers"
 	"github.com/ChanKachan/bill-split-app/internal/domain/service"
+	"github.com/ChanKachan/bill-split-app/internal/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -66,7 +66,7 @@ func (h *groupHandlers) AddUserToGroup(c *gin.Context) {
 		return
 	}
 
-	userInfo := internal.UserInfo{UserId: userId}
+	userInfo := types.UserInfo{UserId: userId}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -238,7 +238,7 @@ func (h *groupHandlers) AddMember(c *gin.Context) {
 		return
 	}
 
-	userInfo := internal.UserInfo{UserId: userId}
+	userInfo := types.UserInfo{UserId: userId}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -288,7 +288,7 @@ func (h *groupHandlers) GetUsersInGroup(c *gin.Context) {
 		return
 	}
 
-	userInfo := internal.UserInfo{UserId: userId}
+	userInfo := types.UserInfo{UserId: userId}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -343,7 +343,7 @@ func (h *groupHandlers) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	userInfo := internal.UserInfo{UserId: userId}
+	userInfo := types.UserInfo{UserId: userId}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -378,7 +378,7 @@ func (gr *groupHandlers) GetUserGroups(c *gin.Context) {
 		return
 	}
 
-	userInfo := internal.UserInfo{UserId: userId}
+	userInfo := types.UserInfo{UserId: userId}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -428,7 +428,7 @@ func (gr *groupHandlers) GetGroupWithMembers(c *gin.Context) {
 		return
 	}
 
-	userInfo := internal.UserInfo{UserId: userId}
+	userInfo := types.UserInfo{UserId: userId}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

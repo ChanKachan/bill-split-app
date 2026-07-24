@@ -13,7 +13,7 @@ type CfgWebSocket struct {
 func GetConfigWebSocket() *CfgWebSocket {
 	waitSecond, err := strconv.Atoi(os.Getenv("PONG_WAIT_SECONDS"))
 	if err != nil {
-		log.Printf("Error convert data in config web socket: %w", err)
+		log.Printf("Error convert data in config web socket: %v", err)
 		return nil
 	}
 	return &CfgWebSocket{

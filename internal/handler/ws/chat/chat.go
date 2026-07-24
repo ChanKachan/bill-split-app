@@ -71,7 +71,7 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 		}
 		c.Writer.WriteHeader(http.StatusBadRequest)
 
-		log.Printf(`Connection to web socket error: %w`, err)
+		log.Printf(`Connection to web socket error: %v`, err)
 		json.NewEncoder(c.Writer).Encode(types.ResponseError{
 			Message: fmt.Sprintf("Connection to web socket error: %v", err),
 			Data:    nil,

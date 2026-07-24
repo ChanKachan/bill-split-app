@@ -37,7 +37,7 @@ func (cs *chatService) GetChat(ctx context.Context, req RequestGetChat) ([]strin
 	if req.ChatId <= 0 {
 		return nil, errors.New("chat id must be greater than zero")
 	}
-	messages, err := cs.chatCache.GetMessagesFromList(ctx, strconv.Itoa(req.ChatId), 0, 50)
+	messages, err := cs.chatCache.GetMessagesFromList(ctx, strconv.Itoa(req.ChatId), 0, 49)
 	if err != nil {
 		return nil, fmt.Errorf("get chat messages from cache error: %w", err)
 	}
@@ -83,7 +83,7 @@ func (cs *chatService) SendMessage(ctx context.Context, req RequestSendMessage) 
 // Обновляем кэш если он заполнен
 // Если элементов в листе меньше 50, то мы добавляем элемент без удаления правого (раннего сообщения)
 func (cs *chatService) updateMessageToCache(ctx context.Context, chatData entityChat.Message) error {
-	messages, err := cs.chatRepo.GetLastMessages(ctx, chatData.Id)
+	messages, err := cs.chatRepo.GetLastMessages(ctx, chatData.ChatId)
 	if err != nil {
 		return fmt.Errorf("get last messages from repository error: %w", err)
 	}
