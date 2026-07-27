@@ -16,6 +16,7 @@ type ChatCache interface {
 	AddMessageOnLeftToList(ctx context.Context, chatID string, dataMessage ...string) error
 	DelOnRightMessageFromList(ctx context.Context, chatID string) error
 	GetMessagesFromList(ctx context.Context, chatID string, start, end int64) ([]string, error)
+	TrimMessagesList(ctx context.Context, chatID string, start, stop int64) error
 }
 
 type chatCache struct {
@@ -28,6 +29,23 @@ func NewChatCache(
 	return &chatCache{
 		redisDB: redisDB,
 	}
+}
+
+func (c *chatCache) TrimMessagesList(ctx context.Context, chatID string, start, stop int64) error {
+	ctx, cancel := context.WithTimeout(ctx, 25*time.Second)
+	defer cancel()
+
+	err := c.redisDB.LTrim(
+		ctx,
+		fmt.Sprintf("group_message:%s", chatID),
+		start,
+		stop,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *chatCache) GetMessage(ctx context.Context, chatID string) (string, error) {

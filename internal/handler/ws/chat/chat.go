@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -20,14 +19,14 @@ type ChatHandler interface {
 }
 
 type chatHandler struct {
-	ws          websocket.Upgrader
+	ws          *websocket.Upgrader
 	configWS    *config.CfgWebSocket
 	chatService chat.ChatService
 	mutex       sync.RWMutex
 }
 
 func NewChatHandler(
-	ws websocket.Upgrader,
+	ws *websocket.Upgrader,
 	configWS *config.CfgWebSocket,
 	chatService chat.ChatService,
 ) ChatHandler {
@@ -40,8 +39,7 @@ func NewChatHandler(
 
 // Обновление http до web socket
 func (ch *chatHandler) ConnectionWS(c *gin.Context) {
-	var wg sync.WaitGroup
-
+	// Получить данные
 	rawUserID, exists := c.Get("userID")
 	if !exists {
 		log.Println("Connect web socket get user userID error")
@@ -54,53 +52,58 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 		return
 	}
 
-	conn, err := ch.ws.Upgrade(c.Writer, c.Request, nil)
-
+	// Обновляем до сокета
+	conn, err := ch.upgradeConnection(c)
 	if err != nil {
-		if websocket.IsWebSocketUpgrade(c.Request) {
-			c.Writer.WriteHeader(http.StatusInternalServerError)
-
-			log.Printf("Ошибка web socket апгрейда: %v", err)
-
-			json.NewEncoder(c.Writer).Encode(types.ResponseError{
-				Message: fmt.Sprintf("WebSocket upgrade failed: %v", err),
-				Data:    nil,
-				Code:    500,
-			})
-			return
-		}
-		c.Writer.WriteHeader(http.StatusBadRequest)
-
-		log.Printf(`Connection to web socket error: %v`, err)
 		json.NewEncoder(c.Writer).Encode(types.ResponseError{
-			Message: fmt.Sprintf("Connection to web socket error: %v", err),
+			Message: fmt.Sprintf("WebSocket upgrade failed: %v", err),
 			Data:    nil,
-			Code:    400,
+			Code:    http.StatusInternalServerError,
 		})
 		return
 	}
-
 	defer conn.Close()
-
-	wg.Add(2)
 
 	clientConn := newClient(
 		conn,
 		make(chan []byte, 256),
 		make(chan []byte, 256),
-		&wg,
 		ch.chatService,
 		userID,
 	)
 
-	ctx, cancel := context.WithCancel(c.Request.Context())
-	defer cancel()
-
-	go clientConn.reader(ctx)
-	go clientConn.writer(ctx)
-	log.Println("Web socket connected")
-
-	wg.Wait()
+	clientConn.run(c.Request.Context())
 
 	return
+}
+
+func (ch *chatHandler) upgradeConnection(c *gin.Context) (*websocket.Conn, error) {
+	conn, err := ch.ws.Upgrade(c.Writer, c.Request, nil)
+
+	if err != nil {
+		//if websocket.IsWebSocketUpgrade(c.Request) {
+		//	c.Writer.WriteHeader(http.StatusInternalServerError)
+		//
+		//	log.Printf("Ошибка web socket апгрейда: %v", err)
+		//
+		//	json.NewEncoder(c.Writer).Encode(types.ResponseError{
+		//		Message: fmt.Sprintf("WebSocket upgrade failed: %v", err),
+		//		Data:    nil,
+		//		Code:    500,
+		//	})
+		//	return nil, err
+		//}
+		//c.Writer.WriteHeader(http.StatusBadRequest)
+		//
+		//log.Printf(`Connection to web socket error: %v`, err)
+		//json.NewEncoder(c.Writer).Encode(types.ResponseError{
+		//	Message: fmt.Sprintf("Connection to web socket error: %v", err),
+		//	Data:    nil,
+		//	Code:    400,
+		//})
+		//return
+		return nil, fmt.Errorf("upgrade websocket connection: %w", err)
+	}
+
+	return conn, nil
 }

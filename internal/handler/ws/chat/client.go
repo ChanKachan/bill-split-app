@@ -23,18 +23,33 @@ type client struct {
 func newClient(
 	conn *websocket.Conn,
 	send, receive chan []byte,
-	wg *sync.WaitGroup,
 	chatService chat.ChatService,
 	userID int,
 ) *client {
+	var wg sync.WaitGroup
+
 	return &client{
 		conn:        conn,
 		send:        send,
 		receive:     receive,
-		wg:          wg,
+		wg:          &wg,
 		chatService: chatService,
 		userID:      userID,
 	}
+}
+
+func (c *client) run(ctx context.Context) {
+	c.wg.Add(2)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// todo: добавить обработку ошибки
+	go c.reader(ctx)
+	go c.writer(ctx)
+
+	log.Println("Web socket connected")
+	c.wg.Wait()
 }
 
 func (c *client) saveMessageToDB(ctx context.Context, chatID, userID int, msg string) error {
@@ -44,7 +59,7 @@ func (c *client) saveMessageToDB(ctx context.Context, chatID, userID int, msg st
 		UserID: userID,
 	}
 
-	err := c.chatService.SendMessage(ctx, data)
+	err := c.chatService.CreateMessage(ctx, data)
 	if err != nil {
 		return fmt.Errorf("Error send message: %w", err)
 	}

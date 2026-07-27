@@ -19,7 +19,6 @@ import (
 	"github.com/ChanKachan/bill-split-app/middleware"
 	proto "github.com/ChanKachan/bill-split-app/proto/this"
 	"github.com/ChanKachan/bill-split-app/repository"
-	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 
 	"google.golang.org/grpc"
@@ -74,10 +73,10 @@ func Start() error {
 	optimizationHandler := handler.NewOptimizationHandler(optimizationService)
 	costHandler := handler.NewCostHandler(costService)
 	chatHandler := chat.NewChatHandler(
-		websocket.Upgrader{
-			ReadBufferSize:  1024,
-			WriteBufferSize: 1024,
-		},
+		chat.NewUpgrader(
+			1024,
+			1024,
+		),
 		configWS,
 		chatServ,
 	)

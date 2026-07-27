@@ -17,13 +17,16 @@ func CheckPassword(password, hash string) bool {
 	return err == nil
 }
 
-func ConvertStructsToString(data ...entityChat.Message) []string {
+func ConvertStructsToString(data ...entityChat.Message) ([]string, error) {
 	var values []string
 	for _, v := range data {
-		jsonData, _ := json.Marshal(v)
+		jsonData, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
 		values = append(values, string(jsonData))
 	}
-	return values
+	return values, nil
 }
 
 func ConvertStringToArrayMessage(data []string) []entityChat.Message {

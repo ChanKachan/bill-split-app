@@ -13,9 +13,11 @@ import (
 	"github.com/ChanKachan/bill-split-app/internal/utils"
 )
 
+const maxCachedMessages = 49
+
 type ChatService interface {
 	GetChat(ctx context.Context, chatID RequestGetChat) ([]string, error)
-	SendMessage(ctx context.Context, req RequestSendMessage) error
+	CreateMessage(ctx context.Context, req RequestSendMessage) error
 }
 
 type chatService struct {
@@ -33,6 +35,9 @@ func NewChatService(
 	}
 }
 
+// Получить данные чата
+// Из кэша или из бд
+// Из бд берем данные, если кэш пустой.
 func (cs *chatService) GetChat(ctx context.Context, req RequestGetChat) ([]string, error) {
 	if req.ChatId <= 0 {
 		return nil, errors.New("chat id must be greater than zero")
@@ -41,10 +46,29 @@ func (cs *chatService) GetChat(ctx context.Context, req RequestGetChat) ([]strin
 	if err != nil {
 		return nil, fmt.Errorf("get chat messages from cache error: %w", err)
 	}
+
+	if len(messages) != 0 {
+		return messages, nil
+	}
+
+	msgs, err := cs.chatRepo.GetLastMessages(ctx, req.ChatId)
+	if err != nil {
+		return nil, fmt.Errorf("get last messages error: %w", err)
+	}
+
+	if msgs == nil || len(msgs) == 0 {
+		return []string{}, nil
+	}
+
+	messages, err = utils.ConvertStructsToString(msgs...)
+	if err != nil {
+		return nil, fmt.Errorf("GetChat | convert structs to string error: %w", err)
+	}
 	return messages, nil
 }
 
-func (cs *chatService) SendMessage(ctx context.Context, req RequestSendMessage) error {
+// Добавление чата в бд и в кэш
+func (cs *chatService) CreateMessage(ctx context.Context, req RequestSendMessage) error {
 	if req.Text == "" || req.UserID == 0 || req.ChatId == 0 {
 		return fmt.Errorf("data is empty: %v", req)
 	}
@@ -80,24 +104,28 @@ func (cs *chatService) SendMessage(ctx context.Context, req RequestSendMessage) 
 	return nil
 }
 
-// Обновляем кэш если он заполнен
-// Если элементов в листе меньше 50, то мы добавляем элемент без удаления правого (раннего сообщения)
+// Добавляет новое сообщение в кэш
+// Оставляет последние 50 сообщений
 func (cs *chatService) updateMessageToCache(ctx context.Context, chatData entityChat.Message) error {
-	messages, err := cs.chatRepo.GetLastMessages(ctx, chatData.ChatId)
+	chatID := strconv.Itoa(chatData.ChatId)
+
+	dataMessages, err := utils.ConvertStructsToString(chatData)
 	if err != nil {
-		return fmt.Errorf("get last messages from repository error: %w", err)
+		return fmt.Errorf("updateMessageToCache | convert chat message error: %w", err)
 	}
 
-	err = cs.chatCache.AddMessageOnLeftToList(ctx, strconv.Itoa(chatData.ChatId), utils.ConvertStructsToString(chatData)...)
+	err = cs.chatCache.AddMessageOnLeftToList(
+		ctx,
+		chatID,
+		dataMessages...,
+	)
 	if err != nil {
 		return fmt.Errorf("add message to cache error: %w", err)
 	}
 
-	if len(messages) > 50 {
-		err = cs.chatCache.DelOnRightMessageFromList(ctx, strconv.Itoa(chatData.ChatId))
-		if err != nil {
-			return fmt.Errorf("delete on message from cache error: %w", err)
-		}
+	err = cs.chatCache.TrimMessagesList(ctx, chatID, 0, maxCachedMessages)
+	if err != nil {
+		return fmt.Errorf("trim messages cache error: %w", err)
 	}
 
 	return nil

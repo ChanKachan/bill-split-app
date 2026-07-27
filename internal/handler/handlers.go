@@ -47,8 +47,7 @@ func (h *Handlers) InitRoutes(
 	api := r.Group("/api", auth.AuthMiddleware())
 	{
 		// chat
-		//api.POST("/ws", chatHandler.ConnectionWS)
-		api.GET("/ws", h.chatHandler.ConnectionWS)
+		api.GET("/chats/:chatID/ws", h.chatHandler.ConnectionWS)
 		// Оптимизация
 		api.POST("/optimize", h.optimizationHandler.Optimize)
 		// Пользователь
