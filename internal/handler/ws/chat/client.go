@@ -13,43 +13,58 @@ import (
 
 type client struct {
 	conn        *websocket.Conn
-	send        chan []byte // Сообщение, которое мы хотим отправить (writer)
-	receive     chan []byte // Сообщение, которое мы получаем (reader)
 	wg          *sync.WaitGroup
 	chatService chat.ChatService
-	userID      int
+	data        chatData
 }
 
 func newClient(
 	conn *websocket.Conn,
-	send, receive chan []byte,
 	chatService chat.ChatService,
-	userID int,
+	chatData chatData,
 ) *client {
 	var wg sync.WaitGroup
 
 	return &client{
 		conn:        conn,
-		send:        send,
-		receive:     receive,
 		wg:          &wg,
 		chatService: chatService,
-		userID:      userID,
+		data:        chatData,
 	}
 }
 
-func (c *client) run(ctx context.Context) {
-	c.wg.Add(2)
+func (c *client) run(ctx context.Context) error {
+	errors := make(chan error, 2)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// todo: добавить обработку ошибки
-	go c.reader(ctx)
-	go c.writer(ctx)
+	go func() {
+		if err := c.reader(ctx); err != nil {
+			errors <- fmt.Errorf("reader error: %w", err)
+		}
+	}()
+	go func() {
+		if err := c.writer(ctx); err != nil {
+			errors <- fmt.Errorf("writer error: %w", err)
+		}
+	}()
 
 	log.Println("Web socket connected")
-	c.wg.Wait()
+
+	firstError := <-errors
+	cancel()
+
+	if err := c.conn.Close(); err != nil {
+		log.Printf("close websocket connection: %v", err)
+	}
+
+	<-errors
+	if err := firstError; err != nil {
+		return fmt.Errorf("client client web-socket error: %w", err)
+	}
+
+	return nil
 }
 
 func (c *client) saveMessageToDB(ctx context.Context, chatID, userID int, msg string) error {
@@ -101,12 +116,12 @@ func (c *client) reader(ctx context.Context) error {
 			return fmt.Errorf("Error read messange: %w", err)
 		}
 
-		err = c.saveMessageToDB(ctx, 1, c.userID, string(msg)) // todo: стоят замоканные данные
+		err = c.saveMessageToDB(ctx, c.data.chatID, c.data.userID, string(msg))
 		if err != nil {
 			log.Println("Web socket error save message:", err)
 			return fmt.Errorf("Error save message: %w", err)
 		}
-		c.receive <- msg // todo: пока просто отправим его
+		c.data.receive <- msg // todo: пока просто отправим его
 		c.pongHandler()
 	}
 	return nil
@@ -120,7 +135,7 @@ func (c *client) writer(ctx context.Context) error {
 
 	for {
 		select {
-		case msg := <-c.receive:
+		case msg := <-c.data.receive:
 			if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
 				return fmt.Errorf("Error send message: %w", err)
 			}
@@ -131,9 +146,7 @@ func (c *client) writer(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		}
-
 	}
-	return nil
 }
 
 func (c *client) pongHandler() {

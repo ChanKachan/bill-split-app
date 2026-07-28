@@ -39,6 +39,8 @@ func NewChatHandler(
 
 // Обновление http до web socket
 func (ch *chatHandler) ConnectionWS(c *gin.Context) {
+	//todo нужно получить тут чат ид из юрл
+
 	// Получить данные
 	rawUserID, exists := c.Get("userID")
 	if !exists {
@@ -66,14 +68,20 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 
 	clientConn := newClient(
 		conn,
-		make(chan []byte, 256),
-		make(chan []byte, 256),
 		ch.chatService,
-		userID,
+		chatData{
+			userID:  userID,
+			chatID:  chatID,
+			send:    make(chan []byte, 256),
+			receive: make(chan []byte, 256),
+		},
 	)
 
-	clientConn.run(c.Request.Context())
-
+	err = clientConn.run(c.Request.Context())
+	if err != nil {
+		log.Printf("WebSocket client failed: %v", err)
+		return
+	}
 	return
 }
 
