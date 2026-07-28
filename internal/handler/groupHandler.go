@@ -270,30 +270,30 @@ func (h *groupHandlers) GetUsersInGroup(c *gin.Context) {
 		return
 	}
 
-	userInfoAny, ok := c.Get("userID")
-	if !ok {
-		log.Println("GetUsersInGroup | user_info not found in context")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "user_info not found in context",
-		})
-		return
-	}
+	//userInfoAny, ok := c.Get("userID")
+	//if !ok {
+	//	log.Println("GetUsersInGroup | user_info not found in context")
+	//	c.JSON(http.StatusBadRequest, gin.H{
+	//		"error": "user_info not found in context",
+	//	})
+	//	return
+	//}
 
-	userId, ok := userInfoAny.(int)
-	if !ok {
-		log.Println("GetUsersInGroup | Failed to get user info")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to get user info",
-		})
-		return
-	}
-
-	userInfo := types.UserInfo{UserId: userId}
+	//userId, ok := userInfoAny.(int)
+	//if !ok {
+	//	log.Println("GetUsersInGroup | Failed to get user info")
+	//	c.JSON(http.StatusBadRequest, gin.H{
+	//		"error": "Failed to get user info",
+	//	})
+	//	return
+	//}
+	//
+	//userInfo := types.UserInfo{UserId: userId}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	members, err := h.groupService.GetGroupMembersByGroupId(ctx, userInfo.UserId)
+	members, err := h.groupService.GetGroupMembersByGroupId(ctx, 1) // todo: замоканные данные
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{

@@ -9,3 +9,8 @@ type RequestSendMessage struct {
 type RequestGetChat struct {
 	ChatId int
 }
+
+type RequestIsChatsMember struct {
+	ChatId int
+	UserId int
+}

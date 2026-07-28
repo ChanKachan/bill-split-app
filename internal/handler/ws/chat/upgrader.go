@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -38,22 +37,22 @@ func handleUpgradeError(
 		reason,
 	)
 
-	response := struct {
-		Error   string `json:"error"`
-		Message string `json:"message"`
-		Code    int    `json:"code"`
-	}{
-		Error:   "websocket_upgrade_failed",
-		Message: upgradeErrorMessage(status),
-		Code:    status,
-	}
+	//response := struct {
+	//	Error   string `json:"error"`
+	//	Message string `json:"message"`
+	//	Code    int    `json:"code"`
+	//}{
+	//	Error:   "websocket_upgrade_failed",
+	//	Message: upgradeErrorMessage(status),
+	//	Code:    status,
+	//}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Printf("encode websocket upgrade error: %v", err)
-	}
+	//if err := json.NewEncoder(w).Encode(response); err != nil {
+	//	log.Printf("encode websocket upgrade error: %v", err)
+	//}
 }
 
 func upgradeErrorMessage(status int) string {

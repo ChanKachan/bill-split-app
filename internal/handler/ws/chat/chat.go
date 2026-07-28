@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/ChanKachan/bill-split-app/internal/config"
@@ -39,8 +40,6 @@ func NewChatHandler(
 
 // Обновление http до web socket
 func (ch *chatHandler) ConnectionWS(c *gin.Context) {
-	//todo нужно получить тут чат ид из юрл
-
 	// Получить данные
 	rawUserID, exists := c.Get("userID")
 	if !exists {
@@ -51,8 +50,28 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 	userID, ok := rawUserID.(int)
 	if !ok {
 		log.Println("Connect web socket get user ID error because type isn't int")
+		json.NewEncoder(c.Writer).Encode(types.ResponseError{
+			Message: "Connect web socket get user ID error because type isn't int",
+			Data:    nil,
+			Code:    http.StatusInternalServerError,
+		})
 		return
 	}
+
+	dataURI := c.Param("chatID")
+	chatID, err := strconv.Atoi(dataURI)
+	if err != nil {
+		log.Println("Connect web socket get user ID error:", err)
+		json.NewEncoder(c.Writer).Encode(types.ResponseError{
+			Message: fmt.Sprintf("Connect web socket get user ID error: %v", err),
+			Data:    nil,
+			Code:    http.StatusBadRequest,
+		})
+		return
+	}
+
+	// Проверка на доступ к чату
+	ch.chatService.IsChatsMember()
 
 	// Обновляем до сокета
 	conn, err := ch.upgradeConnection(c)

@@ -18,6 +18,7 @@ const maxCachedMessages = 49
 type ChatService interface {
 	GetChat(ctx context.Context, chatID RequestGetChat) ([]string, error)
 	CreateMessage(ctx context.Context, req RequestSendMessage) error
+	IsChatsMember(ctx context.Context, req RequestIsChatsMember) (bool, error)
 }
 
 type chatService struct {
@@ -33,6 +34,16 @@ func NewChatService(
 		chatCache: chatCache,
 		chatRepo:  chatRepo,
 	}
+}
+
+func (c *chatService) IsChatsMember(ctx context.Context, req RequestIsChatsMember) (bool, error) {
+	if req.ChatId == 0 || req.UserId == 0 {
+		return false, errors.New("invalid request params")
+	}
+
+	// todo
+	// сделать проверку на членство в чате
+	return true, nil
 }
 
 // Получить данные чата
