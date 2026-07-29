@@ -13,6 +13,7 @@ import (
 type ChatRepository interface {
 	CreateMessage(ctx context.Context, messageData CreateMessageRequest) (int, error)
 	GetLastMessages(ctx context.Context, chatId int) ([]entityChat.Message, error)
+	IsMembersChat(ctx context.Context, chatID, userID int) (bool, error)
 }
 
 type chatRepository struct {
@@ -23,6 +24,31 @@ func NewChatRepository(db *pgxpool.Pool) ChatRepository {
 	return &chatRepository{
 		db: db,
 	}
+}
+
+func (c *chatRepository) IsMembersChat(ctx context.Context, chatID, userID int) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	isMembersChat := false
+
+	query := `
+	SELECT EXISTS (
+    	SELECT 1
+    	FROM chat c
+		JOIN group_members gm ON gm.group_id = c.group_id
+		WHERE c.id = $1
+			AND gm.user_id = $2
+		  	AND c.del = false
+		  	AND gm.del = 0
+	)`
+
+	err := c.db.QueryRow(ctx, query, chatID, userID).Scan(&isMembersChat)
+	if err != nil {
+		return false, fmt.Errorf("error is members chat from repository: %w", err)
+	}
+
+	return isMembersChat, nil
 }
 
 func (c *chatRepository) CreateMessage(ctx context.Context, messageData CreateMessageRequest) (int, error) {

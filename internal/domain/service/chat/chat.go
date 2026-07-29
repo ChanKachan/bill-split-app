@@ -36,14 +36,18 @@ func NewChatService(
 	}
 }
 
+// IsChatsMember - проверяет существует ли пользователь в чате
 func (c *chatService) IsChatsMember(ctx context.Context, req RequestIsChatsMember) (bool, error) {
 	if req.ChatId == 0 || req.UserId == 0 {
 		return false, errors.New("invalid request params")
 	}
 
-	// todo
-	// сделать проверку на членство в чате
-	return true, nil
+	isMember, err := c.chatRepo.IsMembersChat(ctx, req.ChatId, req.UserId)
+	if err != nil {
+		return false, fmt.Errorf("service is chats members error: %w", err)
+	}
+
+	return isMember, nil
 }
 
 // Получить данные чата

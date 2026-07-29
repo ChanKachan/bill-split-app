@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -71,7 +72,16 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 	}
 
 	// Проверка на доступ к чату
-	ch.chatService.IsChatsMember()
+	response := ch.checkMembersChat(
+		c.Request.Context(),
+		chat.RequestIsChatsMember{
+			ChatId: chatID,
+			UserId: userID,
+		})
+	if response != nil {
+		json.NewEncoder(c.Writer).Encode(response)
+		return
+	}
 
 	// Обновляем до сокета
 	conn, err := ch.upgradeConnection(c)
@@ -106,7 +116,6 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 
 func (ch *chatHandler) upgradeConnection(c *gin.Context) (*websocket.Conn, error) {
 	conn, err := ch.ws.Upgrade(c.Writer, c.Request, nil)
-
 	if err != nil {
 		//if websocket.IsWebSocketUpgrade(c.Request) {
 		//	c.Writer.WriteHeader(http.StatusInternalServerError)
@@ -133,4 +142,26 @@ func (ch *chatHandler) upgradeConnection(c *gin.Context) (*websocket.Conn, error
 	}
 
 	return conn, nil
+}
+
+func (ch *chatHandler) checkMembersChat(ctx context.Context, data chat.RequestIsChatsMember) *types.ResponseError {
+	var response types.ResponseError
+	isMembersChat, err := ch.chatService.IsChatsMember(
+		ctx,
+		data,
+	)
+	if err != nil {
+		log.Println("Service chat is chats members in Connection WS error:", err)
+		response.Message = fmt.Sprintf("Service chat is chats members in Connection WS error: %v", err)
+		response.Code = http.StatusInternalServerError
+
+		return &response
+	}
+	if !isMembersChat {
+		response.Message = fmt.Sprintf("User isn't member of chat: %v", err)
+		response.Code = http.StatusForbidden
+		return &response
+	}
+
+	return nil
 }
