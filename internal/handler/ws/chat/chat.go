@@ -78,8 +78,9 @@ func (ch *chatHandler) ConnectionWS(c *gin.Context) {
 			ChatId: chatID,
 			UserId: userID,
 		})
+	log.Println(response)
 	if response != nil {
-		json.NewEncoder(c.Writer).Encode(response)
+		c.JSON(response.Code, response)
 		return
 	}
 

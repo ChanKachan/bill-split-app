@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/ChanKachan/bill-split-app/internal/domain/service/chat"
@@ -13,7 +12,6 @@ import (
 
 type client struct {
 	conn        *websocket.Conn
-	wg          *sync.WaitGroup
 	chatService chat.ChatService
 	data        chatData
 }
@@ -23,11 +21,8 @@ func newClient(
 	chatService chat.ChatService,
 	chatData chatData,
 ) *client {
-	var wg sync.WaitGroup
-
 	return &client{
 		conn:        conn,
-		wg:          &wg,
 		chatService: chatService,
 		data:        chatData,
 	}
@@ -89,10 +84,27 @@ func (c *client) сlose() error {
 	return nil
 }
 
+// getLastMessages отправляет последние 50 сообщений в writer
+func (c *client) getLastMessages(ctx context.Context, chatID int) error {
+	messages, err := c.chatService.GetChat(ctx, chat.RequestGetChat{ChatId: chatID})
+	if err != nil {
+		return fmt.Errorf("get last messages from service chat error: %v", err)
+	}
+	if len(messages) == 0 {
+		return nil
+	}
+
+	messagesByte := []byte{}
+	for _, msg := range messages {
+		messagesByte = append(messagesByte, []byte(msg)...)
+	}
+
+	c.data.receive <- messagesByte
+	return nil
+}
+
 func (c *client) reader(ctx context.Context) error {
 	defer func() {
-		c.wg.Done()
-
 		err := c.сlose()
 		if err != nil {
 			log.Printf("Error close client: %v", err)
@@ -128,8 +140,6 @@ func (c *client) reader(ctx context.Context) error {
 }
 
 func (c *client) writer(ctx context.Context) error {
-	defer c.wg.Done()
-
 	pingTicker := time.NewTicker(50 * time.Second)
 	defer pingTicker.Stop()
 
